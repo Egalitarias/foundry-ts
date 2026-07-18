@@ -1,7 +1,9 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain } from 'electron'
+import type { OpenDialogOptions } from 'electron'
 import { join } from 'node:path'
 import { createSeedSnapshot } from './snapshot'
 import { listOllamaModels } from './ollama'
+import { getSettingsFilePath, loadProjectPath, saveProjectPath } from './settings'
 
 const seedSnapshot = createSeedSnapshot()
 
@@ -34,6 +36,31 @@ function registerIpc() {
   ipcMain.handle('dashboard:getSnapshot', () => seedSnapshot)
 
   ipcMain.handle('ollama:listModels', (_, urlInput: unknown) => listOllamaModels(urlInput))
+
+  ipcMain.handle('settings:getProjectPath', () => loadProjectPath(getSettingsFilePath(app.getPath('userData'))))
+
+  ipcMain.handle('settings:selectProjectPath', async () => {
+    const options: OpenDialogOptions = {
+      title: 'Select project folder',
+      buttonLabel: 'Select folder',
+      properties: ['openDirectory', 'createDirectory']
+    }
+    const focusedWindow = BrowserWindow.getFocusedWindow()
+    const result = focusedWindow
+      ? await dialog.showOpenDialog(focusedWindow, options)
+      : await dialog.showOpenDialog(options)
+
+    if (result.canceled) {
+      return null
+    }
+
+    const selectedPath = result.filePaths.find((filePath) => filePath.trim().length > 0)
+    if (!selectedPath) {
+      return null
+    }
+
+    return saveProjectPath(getSettingsFilePath(app.getPath('userData')), selectedPath)
+  })
 }
 
 app.whenReady().then(() => {

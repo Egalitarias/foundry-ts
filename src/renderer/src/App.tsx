@@ -27,6 +27,9 @@ function App() {
   const [snapshot, setSnapshot] = useState<DashboardSnapshot | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<'dashboard' | 'settings'>('dashboard')
+  const [projectPath, setProjectPath] = useState('')
+  const [projectPathLoading, setProjectPathLoading] = useState(false)
+  const [projectPathError, setProjectPathError] = useState<string | null>(null)
   const [ollamaUrl, setOllamaUrl] = useState('http://127.0.0.1:11434')
   const [models, setModels] = useState<string[]>([])
   const [modelsLoading, setModelsLoading] = useState(false)
@@ -45,6 +48,19 @@ function App() {
       .catch((cause) => {
         if (mounted) {
           setError(cause instanceof Error ? cause.message : 'Unable to load dashboard state.')
+        }
+      })
+
+    window.foundry
+      .getProjectPath()
+      .then((value) => {
+        if (mounted && value) {
+          setProjectPath(value)
+        }
+      })
+      .catch((cause) => {
+        if (mounted) {
+          setProjectPathError(cause instanceof Error ? cause.message : 'Unable to read saved project path.')
         }
       })
 
@@ -89,6 +105,22 @@ function App() {
     }
   }
 
+  const selectProjectPath = async () => {
+    setProjectPathLoading(true)
+    setProjectPathError(null)
+
+    try {
+      const selectedPath = await window.foundry.selectProjectPath()
+      if (selectedPath) {
+        setProjectPath(selectedPath)
+      }
+    } catch (cause) {
+      setProjectPathError(cause instanceof Error ? cause.message : 'Unable to select project path.')
+    } finally {
+      setProjectPathLoading(false)
+    }
+  }
+
   return (
     <main className="shell">
       <header className="app-header">
@@ -107,42 +139,74 @@ function App() {
 
       {view === 'settings' ? (
         <section className="settings-view panel">
-          <div className="panel-header">
-            <h2>Ollama settings</h2>
-            <span>Connection profile</span>
-          </div>
-          <p className="settings-help">
-            Enter your Ollama server URL, then fetch available models from /api/tags.
-          </p>
-          <label className="settings-label" htmlFor="ollama-url-input">
-            Ollama server URL
-          </label>
-          <div className="settings-form-row">
-            <input
-              id="ollama-url-input"
-              className="settings-input"
-              value={ollamaUrl}
-              onChange={(event) => setOllamaUrl(event.target.value)}
-              placeholder="http://127.0.0.1:11434"
-            />
-            <button type="button" className="settings-fetch" onClick={loadOllamaModels} disabled={modelsLoading}>
-              {modelsLoading ? 'Loading...' : 'Load models'}
-            </button>
+          <div className="settings-section">
+            <div className="panel-header">
+              <h2>Workspace settings</h2>
+              <span>Project context</span>
+            </div>
+            <p className="settings-help">Choose the local project folder this workspace should operate on.</p>
+            <label className="settings-label" htmlFor="project-path-input">
+              Project path
+            </label>
+            <div className="settings-form-row">
+              <input
+                id="project-path-input"
+                className="settings-input"
+                value={projectPath}
+                readOnly
+                placeholder="No project folder selected"
+              />
+              <button
+                type="button"
+                className="settings-fetch"
+                onClick={selectProjectPath}
+                disabled={projectPathLoading}
+              >
+                {projectPathLoading ? 'Selecting...' : 'Select folder'}
+              </button>
+            </div>
+
+            {projectPathError ? <p className="settings-error">{projectPathError}</p> : null}
           </div>
 
-          {modelsError ? <p className="settings-error">{modelsError}</p> : null}
+          <div className="settings-section">
+            <div className="panel-header">
+              <h2>Ollama settings</h2>
+              <span>Connection profile</span>
+            </div>
+            <p className="settings-help">
+              Enter your Ollama server URL, then fetch available models from /api/tags.
+            </p>
+            <label className="settings-label" htmlFor="ollama-url-input">
+              Ollama server URL
+            </label>
+            <div className="settings-form-row">
+              <input
+                id="ollama-url-input"
+                className="settings-input"
+                value={ollamaUrl}
+                onChange={(event) => setOllamaUrl(event.target.value)}
+                placeholder="http://127.0.0.1:11434"
+              />
+              <button type="button" className="settings-fetch" onClick={loadOllamaModels} disabled={modelsLoading}>
+                {modelsLoading ? 'Loading...' : 'Load models'}
+              </button>
+            </div>
 
-          <div className="models-list-wrap">
-            <h3>Available models</h3>
-            {models.length === 0 ? (
-              <p className="settings-help">No models loaded yet.</p>
-            ) : (
-              <ul className="models-list">
-                {models.map((model) => (
-                  <li key={model}>{model}</li>
-                ))}
-              </ul>
-            )}
+            {modelsError ? <p className="settings-error">{modelsError}</p> : null}
+
+            <div className="models-list-wrap">
+              <h3>Available models</h3>
+              {models.length === 0 ? (
+                <p className="settings-help">No models loaded yet.</p>
+              ) : (
+                <ul className="models-list">
+                  {models.map((model) => (
+                    <li key={model}>{model}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </section>
       ) : (
