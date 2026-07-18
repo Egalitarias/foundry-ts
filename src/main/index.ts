@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'node:path'
 import { createSeedSnapshot } from './snapshot'
+import { listOllamaModels } from './ollama'
 
 const seedSnapshot = createSeedSnapshot()
 
@@ -31,6 +32,8 @@ function createWindow() {
 
 function registerIpc() {
   ipcMain.handle('dashboard:getSnapshot', () => seedSnapshot)
+
+  ipcMain.handle('ollama:listModels', (_, urlInput: unknown) => listOllamaModels(urlInput))
 }
 
 app.whenReady().then(() => {
