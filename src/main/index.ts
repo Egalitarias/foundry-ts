@@ -6,11 +6,13 @@ import { listOllamaModels } from './ollama'
 import {
   getSettingsFilePath,
   loadBuildModel,
+  loadEstimateModel,
   loadIssueModel,
   loadOllamaUrl,
   loadProjectPath,
   loadScoutModel,
   saveBuildModel,
+  saveEstimateModel,
   saveIssueModel,
   saveOllamaUrl,
   saveProjectPath,
@@ -52,6 +54,7 @@ function registerIpc() {
   ipcMain.handle('settings:getProjectPath', () => loadProjectPath(getSettingsFilePath(app.getPath('userData'))))
   ipcMain.handle('settings:getScoutModel', () => loadScoutModel(getSettingsFilePath(app.getPath('userData'))))
   ipcMain.handle('settings:getIssueModel', () => loadIssueModel(getSettingsFilePath(app.getPath('userData'))))
+  ipcMain.handle('settings:getEstimateModel', () => loadEstimateModel(getSettingsFilePath(app.getPath('userData'))))
   ipcMain.handle('settings:getBuildModel', () => loadBuildModel(getSettingsFilePath(app.getPath('userData'))))
   ipcMain.handle('settings:getOllamaUrl', () => loadOllamaUrl(getSettingsFilePath(app.getPath('userData'))))
   ipcMain.handle('settings:setScoutModel', (_, scoutModelInput: string | null) =>
@@ -59,6 +62,9 @@ function registerIpc() {
   )
   ipcMain.handle('settings:setIssueModel', (_, issueModelInput: string | null) =>
     saveIssueModel(getSettingsFilePath(app.getPath('userData')), issueModelInput)
+  )
+  ipcMain.handle('settings:setEstimateModel', (_, estimateModelInput: string | null) =>
+    saveEstimateModel(getSettingsFilePath(app.getPath('userData')), estimateModelInput)
   )
   ipcMain.handle('settings:setBuildModel', (_, buildModelInput: string | null) =>
     saveBuildModel(getSettingsFilePath(app.getPath('userData')), buildModelInput)
