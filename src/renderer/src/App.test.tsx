@@ -11,6 +11,8 @@ declare global {
     foundry: {
       getDashboardSnapshot: () => Promise<DashboardSnapshot>
       listOllamaModels: (url: string) => Promise<string[]>
+      getProjectPath: () => Promise<string | null>
+      selectProjectPath: () => Promise<string | null>
     }
   }
 }
@@ -137,7 +139,9 @@ describe('App rendering', () => {
   beforeEach(() => {
     window.foundry = {
       getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
-      listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest'])
+      listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
+      getProjectPath: vi.fn().mockResolvedValue('/Users/garydavies/github/egalitarias/foundry-ts'),
+      selectProjectPath: vi.fn().mockResolvedValue('/Users/garydavies/github/egalitarias/foundry-ts')
     }
   })
 
@@ -149,7 +153,9 @@ describe('App rendering', () => {
   it('shows loading state before snapshot resolves', () => {
     window.foundry = {
       getDashboardSnapshot: () => new Promise<DashboardSnapshot>(() => {}),
-      listOllamaModels: vi.fn().mockResolvedValue([])
+      listOllamaModels: vi.fn().mockResolvedValue([]),
+      getProjectPath: vi.fn().mockResolvedValue(null),
+      selectProjectPath: vi.fn().mockResolvedValue(null)
     }
 
     render(<App />)
@@ -208,7 +214,9 @@ describe('App rendering', () => {
   it('renders error state when snapshot load fails', async () => {
     window.foundry = {
       getDashboardSnapshot: vi.fn().mockRejectedValue(new Error('IPC unavailable')),
-      listOllamaModels: vi.fn().mockResolvedValue([])
+      listOllamaModels: vi.fn().mockResolvedValue([]),
+      getProjectPath: vi.fn().mockResolvedValue(null),
+      selectProjectPath: vi.fn().mockResolvedValue(null)
     }
 
     render(<App />)
@@ -222,7 +230,9 @@ describe('App rendering', () => {
   it('falls back to generic error message for non-error rejection', async () => {
     window.foundry = {
       getDashboardSnapshot: vi.fn().mockRejectedValue('bad'),
-      listOllamaModels: vi.fn().mockResolvedValue([])
+      listOllamaModels: vi.fn().mockResolvedValue([]),
+      getProjectPath: vi.fn().mockResolvedValue(null),
+      selectProjectPath: vi.fn().mockResolvedValue(null)
     }
 
     render(<App />)
@@ -252,6 +262,54 @@ describe('App rendering', () => {
     expect(screen.getByText('qwen2.5:latest')).toBeInTheDocument()
   })
 
+  it('selects and displays a project path from settings', async () => {
+    const user = userEvent.setup()
+    const selectProjectPath = vi.fn().mockResolvedValue('/Users/garydavies/github/egalitarias/foundry-ts')
+    window.foundry = {
+      getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
+      listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
+      getProjectPath: vi.fn().mockResolvedValue(null),
+      selectProjectPath
+    }
+
+    render(<App />)
+
+    await screen.findByText('AI agents coordinating the software delivery lifecycle.')
+    await user.click(screen.getByRole('button', { name: 'Open settings' }))
+    await user.click(screen.getByRole('button', { name: 'Select folder' }))
+
+    expect(await screen.findByDisplayValue('/Users/garydavies/github/egalitarias/foundry-ts')).toBeInTheDocument()
+    expect(selectProjectPath).toHaveBeenCalledTimes(1)
+  })
+
+  it('loads and displays the saved project path when settings open', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await screen.findByText('AI agents coordinating the software delivery lifecycle.')
+    await user.click(screen.getByRole('button', { name: 'Open settings' }))
+
+    expect(await screen.findByDisplayValue('/Users/garydavies/github/egalitarias/foundry-ts')).toBeInTheDocument()
+  })
+
+  it('shows a project path selection error for non-error rejections', async () => {
+    const user = userEvent.setup()
+    window.foundry = {
+      getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
+      listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
+      getProjectPath: vi.fn().mockResolvedValue(null),
+      selectProjectPath: vi.fn().mockRejectedValue('denied')
+    }
+
+    render(<App />)
+
+    await screen.findByText('AI agents coordinating the software delivery lifecycle.')
+    await user.click(screen.getByRole('button', { name: 'Open settings' }))
+    await user.click(screen.getByRole('button', { name: 'Select folder' }))
+
+    expect(await screen.findByText('Unable to select project path.')).toBeInTheDocument()
+  })
+
   it('shows error and clears models when loading models fails with Error', async () => {
     const user = userEvent.setup()
     window.foundry = {
@@ -259,7 +317,9 @@ describe('App rendering', () => {
       listOllamaModels: vi
         .fn()
         .mockResolvedValueOnce(['llama3:latest'])
-        .mockRejectedValueOnce(new Error('Server unreachable'))
+        .mockRejectedValueOnce(new Error('Server unreachable')),
+      getProjectPath: vi.fn().mockResolvedValue(null),
+      selectProjectPath: vi.fn().mockResolvedValue(null)
     }
 
     render(<App />)
@@ -282,7 +342,9 @@ describe('App rendering', () => {
       listOllamaModels: vi
         .fn()
         .mockResolvedValueOnce(['llama3:latest'])
-        .mockRejectedValueOnce('bad response')
+        .mockRejectedValueOnce('bad response'),
+      getProjectPath: vi.fn().mockResolvedValue(null),
+      selectProjectPath: vi.fn().mockResolvedValue(null)
     }
 
     render(<App />)
@@ -296,5 +358,22 @@ describe('App rendering', () => {
     await user.click(screen.getByRole('button', { name: 'Load models' }))
     await screen.findByText('Unable to load models from Ollama.')
     expect(screen.queryByText('llama3:latest')).not.toBeInTheDocument()
+  })
+
+  it('shows a project path load error when saved settings cannot be read', async () => {
+    const user = userEvent.setup()
+    window.foundry = {
+      getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
+      listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
+      getProjectPath: vi.fn().mockRejectedValue(new Error('Unable to read saved project path.')),
+      selectProjectPath: vi.fn().mockResolvedValue(null)
+    }
+
+    render(<App />)
+
+    await screen.findByText('AI agents coordinating the software delivery lifecycle.')
+    await user.click(screen.getByRole('button', { name: 'Open settings' }))
+
+    expect(await screen.findByText('Unable to read saved project path.')).toBeInTheDocument()
   })
 })

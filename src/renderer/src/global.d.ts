@@ -5,6 +5,8 @@ declare global {
     foundry: {
       getDashboardSnapshot: () => Promise<DashboardSnapshot>
       listOllamaModels: (url: string) => Promise<string[]>
+      getProjectPath: () => Promise<string | null>
+      selectProjectPath: () => Promise<string | null>
     }
   }
 }
