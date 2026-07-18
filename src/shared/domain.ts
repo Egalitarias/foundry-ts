@@ -56,3 +56,11 @@ export interface DashboardSnapshot {
   recentRuns: RunRecord[]
   activity: ActivityItem[]
 }
+
+export interface OllamaModel {
+  name: string
+}
+
+export interface OllamaModelList {
+  models: OllamaModel[]
+}

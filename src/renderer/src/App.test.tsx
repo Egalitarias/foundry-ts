@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App, { formatTime, phaseTone } from './App'
 import type { DashboardSnapshot } from '../../shared/domain'
@@ -9,6 +10,7 @@ declare global {
   interface Window {
     foundry: {
       getDashboardSnapshot: () => Promise<DashboardSnapshot>
+      listOllamaModels: (url: string) => Promise<string[]>
     }
   }
 }
@@ -134,7 +136,8 @@ describe('App helpers', () => {
 describe('App rendering', () => {
   beforeEach(() => {
     window.foundry = {
-      getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot())
+      getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
+      listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest'])
     }
   })
 
@@ -145,7 +148,8 @@ describe('App rendering', () => {
 
   it('shows loading state before snapshot resolves', () => {
     window.foundry = {
-      getDashboardSnapshot: () => new Promise<DashboardSnapshot>(() => {})
+      getDashboardSnapshot: () => new Promise<DashboardSnapshot>(() => {}),
+      listOllamaModels: vi.fn().mockResolvedValue([])
     }
 
     render(<App />)
@@ -203,7 +207,8 @@ describe('App rendering', () => {
 
   it('renders error state when snapshot load fails', async () => {
     window.foundry = {
-      getDashboardSnapshot: vi.fn().mockRejectedValue(new Error('IPC unavailable'))
+      getDashboardSnapshot: vi.fn().mockRejectedValue(new Error('IPC unavailable')),
+      listOllamaModels: vi.fn().mockResolvedValue([])
     }
 
     render(<App />)
@@ -216,7 +221,8 @@ describe('App rendering', () => {
 
   it('falls back to generic error message for non-error rejection', async () => {
     window.foundry = {
-      getDashboardSnapshot: vi.fn().mockRejectedValue('bad')
+      getDashboardSnapshot: vi.fn().mockRejectedValue('bad'),
+      listOllamaModels: vi.fn().mockResolvedValue([])
     }
 
     render(<App />)
@@ -230,5 +236,19 @@ describe('App rendering', () => {
     render(<App />)
     await screen.findByText('Last synced')
     expect(screen.getByText('Typed IPC, local state, and reviewable agent output remain in sync.')).toBeInTheDocument()
+  })
+
+  it('loads models from settings when the fetch button is pressed', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await screen.findByText('AI agents coordinating the software delivery lifecycle.')
+    await user.click(screen.getByRole('button', { name: 'Open settings' }))
+    await user.click(screen.getByRole('button', { name: 'Load models' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('llama3:latest')).toBeInTheDocument()
+    })
+    expect(screen.getByText('qwen2.5:latest')).toBeInTheDocument()
   })
 })

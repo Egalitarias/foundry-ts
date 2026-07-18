@@ -26,6 +26,11 @@ export function formatTime(value: string) {
 function App() {
   const [snapshot, setSnapshot] = useState<DashboardSnapshot | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [view, setView] = useState<'dashboard' | 'settings'>('dashboard')
+  const [ollamaUrl, setOllamaUrl] = useState('http://127.0.0.1:11434')
+  const [models, setModels] = useState<string[]>([])
+  const [modelsLoading, setModelsLoading] = useState(false)
+  const [modelsError, setModelsError] = useState<string | null>(null)
 
   useEffect(() => {
     let mounted = true
@@ -69,8 +74,79 @@ function App() {
     )
   }
 
+  const loadOllamaModels = async () => {
+    setModelsLoading(true)
+    setModelsError(null)
+
+    try {
+      const response = await window.foundry.listOllamaModels(ollamaUrl)
+      setModels(response)
+    } catch (cause) {
+      setModelsError(cause instanceof Error ? cause.message : 'Unable to load models from Ollama.')
+      setModels([])
+    } finally {
+      setModelsLoading(false)
+    }
+  }
+
   return (
     <main className="shell">
+      <header className="app-header">
+        <button
+          type="button"
+          className="settings-button"
+          onClick={() => setView(view === 'dashboard' ? 'settings' : 'dashboard')}
+          aria-label="Open settings"
+        >
+          <svg viewBox="0 0 24 24" className="settings-icon" aria-hidden="true">
+            <path d="M19.14 12.94a7.3 7.3 0 0 0 .05-.94 7.3 7.3 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.4 7.4 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.49-.42h-3.84a.5.5 0 0 0-.49.42l-.36 2.54c-.58.23-1.12.53-1.62.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.03.31-.05.62-.05.94s.02.63.05.94L2.82 14.52a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.4 1.04.71 1.62.94l.36 2.54a.5.5 0 0 0 .49.42h3.84a.5.5 0 0 0 .49-.42l.36-2.54c.58-.23 1.12-.54 1.62-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
+          </svg>
+          <span>{view === 'dashboard' ? 'Settings' : 'Back to dashboard'}</span>
+        </button>
+      </header>
+
+      {view === 'settings' ? (
+        <section className="settings-view panel">
+          <div className="panel-header">
+            <h2>Ollama settings</h2>
+            <span>Connection profile</span>
+          </div>
+          <p className="settings-help">
+            Enter your Ollama server URL, then fetch available models from /api/tags.
+          </p>
+          <label className="settings-label" htmlFor="ollama-url-input">
+            Ollama server URL
+          </label>
+          <div className="settings-form-row">
+            <input
+              id="ollama-url-input"
+              className="settings-input"
+              value={ollamaUrl}
+              onChange={(event) => setOllamaUrl(event.target.value)}
+              placeholder="http://127.0.0.1:11434"
+            />
+            <button type="button" className="settings-fetch" onClick={loadOllamaModels} disabled={modelsLoading}>
+              {modelsLoading ? 'Loading...' : 'Load models'}
+            </button>
+          </div>
+
+          {modelsError ? <p className="settings-error">{modelsError}</p> : null}
+
+          <div className="models-list-wrap">
+            <h3>Available models</h3>
+            {models.length === 0 ? (
+              <p className="settings-help">No models loaded yet.</p>
+            ) : (
+              <ul className="models-list">
+                {models.map((model) => (
+                  <li key={model}>{model}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+      ) : (
+        <>
       <section className="hero">
         <div>
           <p className="eyebrow">{snapshot.productName}</p>
@@ -191,6 +267,8 @@ function App() {
           </div>
         </article>
       </section>
+        </>
+      )}
     </main>
   )
 }
