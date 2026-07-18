@@ -37,7 +37,11 @@ function App() {
   const [scoutModel, setScoutModel] = useState('')
   const [scoutModelSaving, setScoutModelSaving] = useState(false)
   const [scoutModelError, setScoutModelError] = useState<string | null>(null)
+  const [buildModel, setBuildModel] = useState('')
+  const [buildModelSaving, setBuildModelSaving] = useState(false)
+  const [buildModelError, setBuildModelError] = useState<string | null>(null)
   const scoutModelTouchedRef = useRef(false)
+  const buildModelTouchedRef = useRef(false)
 
   useEffect(() => {
     let mounted = true
@@ -80,6 +84,21 @@ function App() {
       .catch((cause) => {
         if (mounted) {
           setScoutModelError(cause instanceof Error ? cause.message : 'Unable to load saved Scout model.')
+        }
+      })
+
+    window.foundry
+      .getBuildModel()
+      .then((value) => {
+        if (mounted && value) {
+          setBuildModel((currentValue) =>
+            !buildModelTouchedRef.current && currentValue.length === 0 ? value : currentValue
+          )
+        }
+      })
+      .catch((cause) => {
+        if (mounted) {
+          setBuildModelError(cause instanceof Error ? cause.message : 'Unable to load saved Build model.')
         }
       })
 
@@ -157,7 +176,25 @@ function App() {
     }
   }
 
+  const saveBuildModel = async (model: string) => {
+    const previousBuildModel = buildModel
+    setBuildModel(model)
+    setBuildModelSaving(true)
+    setBuildModelError(null)
+
+    try {
+      const persistedModel = await window.foundry.setBuildModel(model.length > 0 ? model : null)
+      setBuildModel(persistedModel ?? '')
+    } catch (cause) {
+      setBuildModel(previousBuildModel)
+      setBuildModelError(cause instanceof Error ? cause.message : 'Unable to save Build model.')
+    } finally {
+      setBuildModelSaving(false)
+    }
+  }
+
   const scoutModelOptions = scoutModel.length > 0 && !models.includes(scoutModel) ? [scoutModel, ...models] : models
+  const buildModelOptions = buildModel.length > 0 && !models.includes(buildModel) ? [buildModel, ...models] : models
 
   return (
     <main className="shell">
@@ -268,6 +305,29 @@ function App() {
             </select>
             <p className="settings-help">Pick which Ollama model Scout should use.</p>
             {scoutModelError ? <p className="settings-error">{scoutModelError}</p> : null}
+
+            <label className="settings-label" htmlFor="build-model-select">
+              Build model
+            </label>
+            <select
+              id="build-model-select"
+              className="settings-input"
+              value={buildModel}
+              onChange={(event) => {
+                buildModelTouchedRef.current = true
+                void saveBuildModel(event.target.value)
+              }}
+              disabled={modelsLoading || buildModelSaving || buildModelOptions.length === 0}
+            >
+              <option value="">No model selected</option>
+              {buildModelOptions.map((model) => (
+                <option key={model} value={model}>
+                  {model}
+                </option>
+              ))}
+            </select>
+            <p className="settings-help">Pick which Ollama model Build should use.</p>
+            {buildModelError ? <p className="settings-error">{buildModelError}</p> : null}
           </div>
         </section>
       ) : (

@@ -6,7 +6,9 @@ const foundryApi = {
   listOllamaModels: (url: string) => ipcRenderer.invoke('ollama:listModels', url) as Promise<string[]>,
   getProjectPath: () => ipcRenderer.invoke('settings:getProjectPath') as Promise<string | null>,
   getScoutModel: () => ipcRenderer.invoke('settings:getScoutModel') as Promise<string | null>,
+  getBuildModel: () => ipcRenderer.invoke('settings:getBuildModel') as Promise<string | null>,
   setScoutModel: (model: string | null) => ipcRenderer.invoke('settings:setScoutModel', model) as Promise<string | null>,
+  setBuildModel: (model: string | null) => ipcRenderer.invoke('settings:setBuildModel', model) as Promise<string | null>,
   selectProjectPath: () => ipcRenderer.invoke('settings:selectProjectPath') as Promise<string | null>
 }
 
