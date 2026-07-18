@@ -6,10 +6,12 @@ import { listOllamaModels } from './ollama'
 import {
   getSettingsFilePath,
   loadBuildModel,
+  loadIssueModel,
   loadOllamaUrl,
   loadProjectPath,
   loadScoutModel,
   saveBuildModel,
+  saveIssueModel,
   saveOllamaUrl,
   saveProjectPath,
   saveScoutModel
@@ -49,10 +51,14 @@ function registerIpc() {
 
   ipcMain.handle('settings:getProjectPath', () => loadProjectPath(getSettingsFilePath(app.getPath('userData'))))
   ipcMain.handle('settings:getScoutModel', () => loadScoutModel(getSettingsFilePath(app.getPath('userData'))))
+  ipcMain.handle('settings:getIssueModel', () => loadIssueModel(getSettingsFilePath(app.getPath('userData'))))
   ipcMain.handle('settings:getBuildModel', () => loadBuildModel(getSettingsFilePath(app.getPath('userData'))))
   ipcMain.handle('settings:getOllamaUrl', () => loadOllamaUrl(getSettingsFilePath(app.getPath('userData'))))
   ipcMain.handle('settings:setScoutModel', (_, scoutModelInput: string | null) =>
     saveScoutModel(getSettingsFilePath(app.getPath('userData')), scoutModelInput)
+  )
+  ipcMain.handle('settings:setIssueModel', (_, issueModelInput: string | null) =>
+    saveIssueModel(getSettingsFilePath(app.getPath('userData')), issueModelInput)
   )
   ipcMain.handle('settings:setBuildModel', (_, buildModelInput: string | null) =>
     saveBuildModel(getSettingsFilePath(app.getPath('userData')), buildModelInput)

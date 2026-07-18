@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path'
 interface StoredSettings {
   projectPath?: unknown
   scoutModel?: unknown
+  issueModel?: unknown
   buildModel?: unknown
   ollamaUrl?: unknown
 }
@@ -30,6 +31,15 @@ function normalizeScoutModel(scoutModel: unknown) {
   }
 
   const trimmed = scoutModel.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
+function normalizeIssueModel(issueModel: unknown) {
+  if (typeof issueModel !== 'string') {
+    return null
+  }
+
+  const trimmed = issueModel.trim()
   return trimmed.length > 0 ? trimmed : null
 }
 
@@ -83,10 +93,11 @@ function toPersistedSettings(
   stored: StoredSettings | null,
   projectPath: string | null | undefined,
   scoutModel: string | null | undefined,
+  issueModel: string | null | undefined,
   buildModel: string | null | undefined,
   ollamaUrl: string | null | undefined
 ) {
-  const next: { projectPath?: string; scoutModel?: string; buildModel?: string; ollamaUrl?: string } = {}
+  const next: { projectPath?: string; scoutModel?: string; issueModel?: string; buildModel?: string; ollamaUrl?: string } = {}
 
   const resolvedProjectPath =
     projectPath === undefined ? normalizeProjectPath(stored?.projectPath) : projectPath
@@ -98,6 +109,12 @@ function toPersistedSettings(
     scoutModel === undefined ? normalizeScoutModel(stored?.scoutModel) : scoutModel
   if (resolvedScoutModel) {
     next.scoutModel = resolvedScoutModel
+  }
+
+  const resolvedIssueModel =
+    issueModel === undefined ? normalizeIssueModel(stored?.issueModel) : issueModel
+  if (resolvedIssueModel) {
+    next.issueModel = resolvedIssueModel
   }
 
   const resolvedBuildModel =
@@ -166,6 +183,18 @@ export async function loadBuildModel(
   return normalizeBuildModel(stored.buildModel)
 }
 
+export async function loadIssueModel(
+  settingsFilePath: string,
+  dependencies: SettingsDependencies = {}
+) {
+  const stored = await readStoredSettings(settingsFilePath, dependencies)
+  if (!stored) {
+    return null
+  }
+
+  return normalizeIssueModel(stored.issueModel)
+}
+
 export async function loadOllamaUrl(
   settingsFilePath: string,
   dependencies: SettingsDependencies = {}
@@ -191,7 +220,7 @@ export async function saveProjectPath(
   const mkdir = dependencies.mkdir ?? fsMkdir
   const writeFile = dependencies.writeFile ?? fsWriteFile
   const stored = await readStoredSettings(settingsFilePath, dependencies)
-  const next = toPersistedSettings(stored, projectPath, undefined, undefined, undefined)
+  const next = toPersistedSettings(stored, projectPath, undefined, undefined, undefined, undefined)
 
   await mkdir(dirname(settingsFilePath), { recursive: true })
   await writeFile(settingsFilePath, JSON.stringify(next, null, 2), 'utf8')
@@ -212,12 +241,33 @@ export async function saveScoutModel(
   const mkdir = dependencies.mkdir ?? fsMkdir
   const writeFile = dependencies.writeFile ?? fsWriteFile
   const stored = await readStoredSettings(settingsFilePath, dependencies)
-  const next = toPersistedSettings(stored, undefined, scoutModel, undefined, undefined)
+  const next = toPersistedSettings(stored, undefined, scoutModel, undefined, undefined, undefined)
 
   await mkdir(dirname(settingsFilePath), { recursive: true })
   await writeFile(settingsFilePath, JSON.stringify(next, null, 2), 'utf8')
 
   return scoutModel
+}
+
+export async function saveIssueModel(
+  settingsFilePath: string,
+  issueModelInput: string | null,
+  dependencies: SettingsDependencies = {}
+) {
+  if (issueModelInput !== null && typeof issueModelInput !== 'string') {
+    throw new Error('Issue model is invalid.')
+  }
+
+  const issueModel = normalizeIssueModel(issueModelInput)
+  const mkdir = dependencies.mkdir ?? fsMkdir
+  const writeFile = dependencies.writeFile ?? fsWriteFile
+  const stored = await readStoredSettings(settingsFilePath, dependencies)
+  const next = toPersistedSettings(stored, undefined, undefined, issueModel, undefined, undefined)
+
+  await mkdir(dirname(settingsFilePath), { recursive: true })
+  await writeFile(settingsFilePath, JSON.stringify(next, null, 2), 'utf8')
+
+  return issueModel
 }
 
 export async function saveBuildModel(
@@ -233,7 +283,7 @@ export async function saveBuildModel(
   const mkdir = dependencies.mkdir ?? fsMkdir
   const writeFile = dependencies.writeFile ?? fsWriteFile
   const stored = await readStoredSettings(settingsFilePath, dependencies)
-  const next = toPersistedSettings(stored, undefined, undefined, buildModel, undefined)
+  const next = toPersistedSettings(stored, undefined, undefined, undefined, buildModel, undefined)
 
   await mkdir(dirname(settingsFilePath), { recursive: true })
   await writeFile(settingsFilePath, JSON.stringify(next, null, 2), 'utf8')
@@ -254,7 +304,7 @@ export async function saveOllamaUrl(
   const mkdir = dependencies.mkdir ?? fsMkdir
   const writeFile = dependencies.writeFile ?? fsWriteFile
   const stored = await readStoredSettings(settingsFilePath, dependencies)
-  const next = toPersistedSettings(stored, undefined, undefined, undefined, ollamaUrl)
+  const next = toPersistedSettings(stored, undefined, undefined, undefined, undefined, ollamaUrl)
 
   await mkdir(dirname(settingsFilePath), { recursive: true })
   await writeFile(settingsFilePath, JSON.stringify(next, null, 2), 'utf8')
