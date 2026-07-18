@@ -5,6 +5,7 @@ interface StoredSettings {
   projectPath?: unknown
   scoutModel?: unknown
   buildModel?: unknown
+  ollamaUrl?: unknown
 }
 
 interface SettingsDependencies {
@@ -41,6 +42,15 @@ function normalizeBuildModel(buildModel: unknown) {
   return trimmed.length > 0 ? trimmed : null
 }
 
+function normalizeOllamaUrl(ollamaUrl: unknown) {
+  if (typeof ollamaUrl !== 'string') {
+    return null
+  }
+
+  const trimmed = ollamaUrl.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
 function isStoredSettings(value: unknown): value is StoredSettings {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
@@ -73,9 +83,10 @@ function toPersistedSettings(
   stored: StoredSettings | null,
   projectPath: string | null | undefined,
   scoutModel: string | null | undefined,
-  buildModel: string | null | undefined
+  buildModel: string | null | undefined,
+  ollamaUrl: string | null | undefined
 ) {
-  const next: { projectPath?: string; scoutModel?: string; buildModel?: string } = {}
+  const next: { projectPath?: string; scoutModel?: string; buildModel?: string; ollamaUrl?: string } = {}
 
   const resolvedProjectPath =
     projectPath === undefined ? normalizeProjectPath(stored?.projectPath) : projectPath
@@ -93,6 +104,11 @@ function toPersistedSettings(
     buildModel === undefined ? normalizeBuildModel(stored?.buildModel) : buildModel
   if (resolvedBuildModel) {
     next.buildModel = resolvedBuildModel
+  }
+
+  const resolvedOllamaUrl = ollamaUrl === undefined ? normalizeOllamaUrl(stored?.ollamaUrl) : ollamaUrl
+  if (resolvedOllamaUrl) {
+    next.ollamaUrl = resolvedOllamaUrl
   }
 
   return next
@@ -150,6 +166,18 @@ export async function loadBuildModel(
   return normalizeBuildModel(stored.buildModel)
 }
 
+export async function loadOllamaUrl(
+  settingsFilePath: string,
+  dependencies: SettingsDependencies = {}
+) {
+  const stored = await readStoredSettings(settingsFilePath, dependencies)
+  if (!stored) {
+    return null
+  }
+
+  return normalizeOllamaUrl(stored.ollamaUrl)
+}
+
 export async function saveProjectPath(
   settingsFilePath: string,
   projectPathInput: string,
@@ -163,7 +191,7 @@ export async function saveProjectPath(
   const mkdir = dependencies.mkdir ?? fsMkdir
   const writeFile = dependencies.writeFile ?? fsWriteFile
   const stored = await readStoredSettings(settingsFilePath, dependencies)
-  const next = toPersistedSettings(stored, projectPath, undefined, undefined)
+  const next = toPersistedSettings(stored, projectPath, undefined, undefined, undefined)
 
   await mkdir(dirname(settingsFilePath), { recursive: true })
   await writeFile(settingsFilePath, JSON.stringify(next, null, 2), 'utf8')
@@ -184,7 +212,7 @@ export async function saveScoutModel(
   const mkdir = dependencies.mkdir ?? fsMkdir
   const writeFile = dependencies.writeFile ?? fsWriteFile
   const stored = await readStoredSettings(settingsFilePath, dependencies)
-  const next = toPersistedSettings(stored, undefined, scoutModel, undefined)
+  const next = toPersistedSettings(stored, undefined, scoutModel, undefined, undefined)
 
   await mkdir(dirname(settingsFilePath), { recursive: true })
   await writeFile(settingsFilePath, JSON.stringify(next, null, 2), 'utf8')
@@ -205,10 +233,31 @@ export async function saveBuildModel(
   const mkdir = dependencies.mkdir ?? fsMkdir
   const writeFile = dependencies.writeFile ?? fsWriteFile
   const stored = await readStoredSettings(settingsFilePath, dependencies)
-  const next = toPersistedSettings(stored, undefined, undefined, buildModel)
+  const next = toPersistedSettings(stored, undefined, undefined, buildModel, undefined)
 
   await mkdir(dirname(settingsFilePath), { recursive: true })
   await writeFile(settingsFilePath, JSON.stringify(next, null, 2), 'utf8')
 
   return buildModel
+}
+
+export async function saveOllamaUrl(
+  settingsFilePath: string,
+  ollamaUrlInput: string | null,
+  dependencies: SettingsDependencies = {}
+) {
+  if (ollamaUrlInput !== null && typeof ollamaUrlInput !== 'string') {
+    throw new Error('Ollama URL is invalid.')
+  }
+
+  const ollamaUrl = normalizeOllamaUrl(ollamaUrlInput)
+  const mkdir = dependencies.mkdir ?? fsMkdir
+  const writeFile = dependencies.writeFile ?? fsWriteFile
+  const stored = await readStoredSettings(settingsFilePath, dependencies)
+  const next = toPersistedSettings(stored, undefined, undefined, undefined, ollamaUrl)
+
+  await mkdir(dirname(settingsFilePath), { recursive: true })
+  await writeFile(settingsFilePath, JSON.stringify(next, null, 2), 'utf8')
+
+  return ollamaUrl
 }

@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   loadBuildModel,
+  loadOllamaUrl,
   loadProjectPath,
   loadScoutModel,
   saveBuildModel,
+  saveOllamaUrl,
   saveProjectPath,
   saveScoutModel
 } from './settings'
@@ -116,6 +118,24 @@ describe('saveProjectPath', () => {
       'utf8'
     )
   })
+
+  it('preserves saved Ollama URL when writing project path', async () => {
+    const readFile = vi.fn().mockResolvedValue(JSON.stringify({ ollamaUrl: 'http://localhost:11434' }))
+    const mkdir = vi.fn().mockResolvedValue(undefined)
+    const writeFile = vi.fn().mockResolvedValue(undefined)
+
+    await saveProjectPath('/tmp/foundry/settings.json', '/Users/garydavies/project', {
+      readFile,
+      mkdir,
+      writeFile
+    })
+
+    expect(writeFile).toHaveBeenCalledWith(
+      '/tmp/foundry/settings.json',
+      JSON.stringify({ projectPath: '/Users/garydavies/project', ollamaUrl: 'http://localhost:11434' }, null, 2),
+      'utf8'
+    )
+  })
 })
 
 describe('loadScoutModel', () => {
@@ -218,6 +238,26 @@ describe('loadBuildModel', () => {
   })
 })
 
+describe('loadOllamaUrl', () => {
+  it('returns null when no Ollama URL is saved', async () => {
+    const readFile = vi.fn().mockResolvedValue(JSON.stringify({}))
+
+    await expect(loadOllamaUrl('/tmp/foundry-settings.json', { readFile })).resolves.toBeNull()
+  })
+
+  it('returns null when saved Ollama URL is blank', async () => {
+    const readFile = vi.fn().mockResolvedValue(JSON.stringify({ ollamaUrl: '   ' }))
+
+    await expect(loadOllamaUrl('/tmp/foundry-settings.json', { readFile })).resolves.toBeNull()
+  })
+
+  it('returns saved Ollama URL when present', async () => {
+    const readFile = vi.fn().mockResolvedValue(JSON.stringify({ ollamaUrl: 'http://localhost:11434' }))
+
+    await expect(loadOllamaUrl('/tmp/foundry-settings.json', { readFile })).resolves.toBe('http://localhost:11434')
+  })
+})
+
 describe('saveBuildModel', () => {
   it('writes Build model and preserves project path', async () => {
     const readFile = vi.fn().mockResolvedValue(JSON.stringify({ projectPath: '/Users/garydavies/project' }))
@@ -264,6 +304,72 @@ describe('saveBuildModel', () => {
 
     await expect(
       saveBuildModel('/tmp/foundry/settings.json', null, {
+        readFile,
+        mkdir,
+        writeFile
+      })
+    ).resolves.toBeNull()
+
+    expect(writeFile).toHaveBeenCalledWith(
+      '/tmp/foundry/settings.json',
+      JSON.stringify({ projectPath: '/Users/garydavies/project' }, null, 2),
+      'utf8'
+    )
+  })
+})
+
+describe('saveOllamaUrl', () => {
+  it('writes Ollama URL and preserves project path', async () => {
+    const readFile = vi.fn().mockResolvedValue(JSON.stringify({ projectPath: '/Users/garydavies/project' }))
+    const mkdir = vi.fn().mockResolvedValue(undefined)
+    const writeFile = vi.fn().mockResolvedValue(undefined)
+
+    await saveOllamaUrl('/tmp/foundry/settings.json', 'http://localhost:11434', {
+      readFile,
+      mkdir,
+      writeFile
+    })
+
+    expect(writeFile).toHaveBeenCalledWith(
+      '/tmp/foundry/settings.json',
+      JSON.stringify({ projectPath: '/Users/garydavies/project', ollamaUrl: 'http://localhost:11434' }, null, 2),
+      'utf8'
+    )
+  })
+
+  it('writes Ollama URL and preserves Scout and Build models', async () => {
+    const readFile = vi
+      .fn()
+      .mockResolvedValue(JSON.stringify({ scoutModel: 'qwen2.5:latest', buildModel: 'llama3:latest' }))
+    const mkdir = vi.fn().mockResolvedValue(undefined)
+    const writeFile = vi.fn().mockResolvedValue(undefined)
+
+    await saveOllamaUrl('/tmp/foundry/settings.json', 'http://localhost:11434', {
+      readFile,
+      mkdir,
+      writeFile
+    })
+
+    expect(writeFile).toHaveBeenCalledWith(
+      '/tmp/foundry/settings.json',
+      JSON.stringify(
+        { scoutModel: 'qwen2.5:latest', buildModel: 'llama3:latest', ollamaUrl: 'http://localhost:11434' },
+        null,
+        2
+      ),
+      'utf8'
+    )
+  })
+
+  it('clears Ollama URL when null is passed', async () => {
+    const readFile = vi
+      .fn()
+      .mockResolvedValue(JSON.stringify({ projectPath: '/Users/garydavies/project', ollamaUrl: 'http://localhost:11434' }))
+    const mkdir = vi.fn().mockResolvedValue(undefined)
+    const writeFile = vi.fn().mockResolvedValue(undefined)
+
+    await expect(
+      saveOllamaUrl('/tmp/foundry/settings.json', null, {
         readFile,
         mkdir,
         writeFile

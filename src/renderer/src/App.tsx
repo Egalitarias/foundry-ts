@@ -30,7 +30,8 @@ function App() {
   const [projectPath, setProjectPath] = useState('')
   const [projectPathLoading, setProjectPathLoading] = useState(false)
   const [projectPathError, setProjectPathError] = useState<string | null>(null)
-  const [ollamaUrl, setOllamaUrl] = useState('http://127.0.0.1:11434')
+  const [ollamaUrl, setOllamaUrlValue] = useState('http://127.0.0.1:11434')
+  const [ollamaUrlError, setOllamaUrlError] = useState<string | null>(null)
   const [models, setModels] = useState<string[]>([])
   const [modelsLoading, setModelsLoading] = useState(false)
   const [modelsError, setModelsError] = useState<string | null>(null)
@@ -40,6 +41,7 @@ function App() {
   const [buildModel, setBuildModel] = useState('')
   const [buildModelSaving, setBuildModelSaving] = useState(false)
   const [buildModelError, setBuildModelError] = useState<string | null>(null)
+  const ollamaUrlTouchedRef = useRef(false)
   const scoutModelTouchedRef = useRef(false)
   const buildModelTouchedRef = useRef(false)
 
@@ -69,6 +71,21 @@ function App() {
       .catch((cause) => {
         if (mounted) {
           setProjectPathError(cause instanceof Error ? cause.message : 'Unable to read saved project path.')
+        }
+      })
+
+    window.foundry
+      .getOllamaUrl()
+      .then((value) => {
+        if (mounted && value) {
+          setOllamaUrlValue((currentValue) =>
+            !ollamaUrlTouchedRef.current ? value : currentValue
+          )
+        }
+      })
+      .catch((cause) => {
+        if (mounted) {
+          setOllamaUrlError(cause instanceof Error ? cause.message : 'Unable to load saved Ollama URL.')
         }
       })
 
@@ -128,9 +145,26 @@ function App() {
     )
   }
 
+  const persistOllamaUrl = async (url: string) => {
+    try {
+      const persistedUrl = await window.foundry.setOllamaUrl(url.length > 0 ? url : null)
+      if (persistedUrl) {
+        setOllamaUrlValue(persistedUrl)
+      }
+      setOllamaUrlError(null)
+      return true
+    } catch (cause) {
+      setOllamaUrlError(cause instanceof Error ? cause.message : 'Unable to save Ollama URL.')
+      return false
+    }
+  }
+
   const loadOllamaModels = async () => {
     setModelsLoading(true)
     setModelsError(null)
+    setOllamaUrlError(null)
+
+    await persistOllamaUrl(ollamaUrl)
 
     try {
       const response = await window.foundry.listOllamaModels(ollamaUrl)
@@ -260,7 +294,13 @@ function App() {
                 id="ollama-url-input"
                 className="settings-input"
                 value={ollamaUrl}
-                onChange={(event) => setOllamaUrl(event.target.value)}
+                onChange={(event) => {
+                  ollamaUrlTouchedRef.current = true
+                  setOllamaUrlValue(event.target.value)
+                }}
+                onBlur={() => {
+                  void persistOllamaUrl(ollamaUrl)
+                }}
                 placeholder="http://127.0.0.1:11434"
               />
               <button type="button" className="settings-fetch" onClick={loadOllamaModels} disabled={modelsLoading}>
@@ -268,6 +308,7 @@ function App() {
               </button>
             </div>
 
+            {ollamaUrlError ? <p className="settings-error">{ollamaUrlError}</p> : null}
             {modelsError ? <p className="settings-error">{modelsError}</p> : null}
 
             <div className="models-list-wrap">
