@@ -11,6 +11,7 @@
 - The settings page must allow the user to enter an Ollama server URL.
 - The app must fetch available Ollama models through typed preload and main-process IPC.
 - Returned Ollama model names must be displayed clearly in the settings UI.
+- The settings page must allow the user to select an Ollama model for Scout.
 - The settings page must show useful errors when project-path selection fails, the Ollama URL is invalid, or the Ollama server cannot be reached.
 
 ## Acceptance Criteria
@@ -23,5 +24,7 @@
 - If folder selection fails, the settings page shows a user-facing error message.
 - The user can enter an Ollama server URL and request available models.
 - When the Ollama request succeeds, returned model names are shown in the settings page.
+- The user can select a Scout model from available Ollama models in settings.
+- The selected Scout model is saved and restored on app restart.
 - When the Ollama URL is invalid, the server is unreachable, or the request times out, the settings page shows a user-facing error message.
 - Renderer access for project-path selection and Ollama model discovery is routed through preload and main-process boundaries.
