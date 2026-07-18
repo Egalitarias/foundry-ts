@@ -251,4 +251,50 @@ describe('App rendering', () => {
     })
     expect(screen.getByText('qwen2.5:latest')).toBeInTheDocument()
   })
+
+  it('shows error and clears models when loading models fails with Error', async () => {
+    const user = userEvent.setup()
+    window.foundry = {
+      getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
+      listOllamaModels: vi
+        .fn()
+        .mockResolvedValueOnce(['llama3:latest'])
+        .mockRejectedValueOnce(new Error('Server unreachable'))
+    }
+
+    render(<App />)
+
+    await screen.findByText('AI agents coordinating the software delivery lifecycle.')
+    await user.click(screen.getByRole('button', { name: 'Open settings' }))
+
+    await user.click(screen.getByRole('button', { name: 'Load models' }))
+    await screen.findByText('llama3:latest')
+
+    await user.click(screen.getByRole('button', { name: 'Load models' }))
+    await screen.findByText('Server unreachable')
+    expect(screen.queryByText('llama3:latest')).not.toBeInTheDocument()
+  })
+
+  it('shows fallback error for non-Error model load failure and clears models', async () => {
+    const user = userEvent.setup()
+    window.foundry = {
+      getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
+      listOllamaModels: vi
+        .fn()
+        .mockResolvedValueOnce(['llama3:latest'])
+        .mockRejectedValueOnce('bad response')
+    }
+
+    render(<App />)
+
+    await screen.findByText('AI agents coordinating the software delivery lifecycle.')
+    await user.click(screen.getByRole('button', { name: 'Open settings' }))
+
+    await user.click(screen.getByRole('button', { name: 'Load models' }))
+    await screen.findByText('llama3:latest')
+
+    await user.click(screen.getByRole('button', { name: 'Load models' }))
+    await screen.findByText('Unable to load models from Ollama.')
+    expect(screen.queryByText('llama3:latest')).not.toBeInTheDocument()
+  })
 })

@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'node:path'
 import { createSeedSnapshot } from './snapshot'
-import type { OllamaModelList } from '../shared/domain'
+import { listOllamaModels } from './ollama'
 
 const seedSnapshot = createSeedSnapshot()
 
@@ -33,49 +33,7 @@ function createWindow() {
 function registerIpc() {
   ipcMain.handle('dashboard:getSnapshot', () => seedSnapshot)
 
-  ipcMain.handle('ollama:listModels', async (_, urlInput: string) => {
-    const baseUrl = normalizeOllamaBaseUrl(urlInput)
-    const response = await fetch(`${baseUrl}/api/tags`, {
-      method: 'GET'
-    })
-
-    if (!response.ok) {
-      throw new Error(`Unable to reach Ollama server (${response.status}).`)
-    }
-
-    const payload = (await response.json()) as Partial<OllamaModelList>
-    if (!payload.models || !Array.isArray(payload.models)) {
-      throw new Error('Invalid model response from Ollama server.')
-    }
-
-    return payload.models
-      .map((model) => model.name)
-      .filter((name): name is string => typeof name === 'string' && name.length > 0)
-  })
-}
-
-function normalizeOllamaBaseUrl(urlInput: string) {
-  const raw = urlInput.trim()
-  if (!raw) {
-    throw new Error('Ollama URL is required.')
-  }
-
-  let parsed: URL
-  try {
-    parsed = new URL(raw)
-  } catch {
-    throw new Error('Ollama URL is invalid.')
-  }
-
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    throw new Error('Only http and https URLs are supported.')
-  }
-
-  parsed.pathname = ''
-  parsed.search = ''
-  parsed.hash = ''
-
-  return parsed.toString().replace(/\/$/, '')
+  ipcMain.handle('ollama:listModels', (_, urlInput: unknown) => listOllamaModels(urlInput))
 }
 
 app.whenReady().then(() => {
