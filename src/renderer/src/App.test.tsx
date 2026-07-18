@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App, { formatTime, phaseTone } from './App'
@@ -267,9 +267,11 @@ describe('App rendering', () => {
     await user.click(screen.getByRole('button', { name: 'Load models' }))
 
     await waitFor(() => {
-      expect(screen.getAllByText('llama3:latest').length).toBeGreaterThan(0)
+      const modelsList = document.querySelector('.models-list')
+      expect(modelsList).not.toBeNull()
+      expect(within(modelsList as HTMLElement).getByText('llama3:latest')).toBeInTheDocument()
+      expect(within(modelsList as HTMLElement).getByText('qwen2.5:latest')).toBeInTheDocument()
     })
-    expect(screen.getAllByText('qwen2.5:latest').length).toBeGreaterThan(0)
   })
 
   it('loads and displays saved Scout model in settings', async () => {

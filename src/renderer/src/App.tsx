@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { DashboardSnapshot, PhaseSummary } from '../../shared/domain'
 
 export function phaseTone(status: PhaseSummary['status']) {
@@ -37,6 +37,7 @@ function App() {
   const [scoutModel, setScoutModel] = useState('')
   const [scoutModelSaving, setScoutModelSaving] = useState(false)
   const [scoutModelError, setScoutModelError] = useState<string | null>(null)
+  const scoutModelTouchedRef = useRef(false)
 
   useEffect(() => {
     let mounted = true
@@ -71,7 +72,9 @@ function App() {
       .getScoutModel()
       .then((value) => {
         if (mounted && value) {
-          setScoutModel((currentValue) => (currentValue.length === 0 ? value : currentValue))
+          setScoutModel((currentValue) =>
+            !scoutModelTouchedRef.current && currentValue.length === 0 ? value : currentValue
+          )
         }
       })
       .catch((cause) => {
@@ -251,6 +254,7 @@ function App() {
               className="settings-input"
               value={scoutModel}
               onChange={(event) => {
+                scoutModelTouchedRef.current = true
                 void saveScoutModel(event.target.value)
               }}
               disabled={modelsLoading || scoutModelSaving || scoutModelOptions.length === 0}
