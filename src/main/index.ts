@@ -3,7 +3,15 @@ import type { OpenDialogOptions } from 'electron'
 import { join } from 'node:path'
 import { createSeedSnapshot } from './snapshot'
 import { listOllamaModels } from './ollama'
-import { getSettingsFilePath, loadProjectPath, loadScoutModel, saveProjectPath, saveScoutModel } from './settings'
+import {
+  getSettingsFilePath,
+  loadBuildModel,
+  loadProjectPath,
+  loadScoutModel,
+  saveBuildModel,
+  saveProjectPath,
+  saveScoutModel
+} from './settings'
 
 const seedSnapshot = createSeedSnapshot()
 
@@ -39,8 +47,12 @@ function registerIpc() {
 
   ipcMain.handle('settings:getProjectPath', () => loadProjectPath(getSettingsFilePath(app.getPath('userData'))))
   ipcMain.handle('settings:getScoutModel', () => loadScoutModel(getSettingsFilePath(app.getPath('userData'))))
+  ipcMain.handle('settings:getBuildModel', () => loadBuildModel(getSettingsFilePath(app.getPath('userData'))))
   ipcMain.handle('settings:setScoutModel', (_, scoutModelInput: string | null) =>
     saveScoutModel(getSettingsFilePath(app.getPath('userData')), scoutModelInput)
+  )
+  ipcMain.handle('settings:setBuildModel', (_, buildModelInput: string | null) =>
+    saveBuildModel(getSettingsFilePath(app.getPath('userData')), buildModelInput)
   )
 
   ipcMain.handle('settings:selectProjectPath', async () => {

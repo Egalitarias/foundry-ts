@@ -1,5 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
-import { loadProjectPath, loadScoutModel, saveProjectPath, saveScoutModel } from './settings'
+import {
+  loadBuildModel,
+  loadProjectPath,
+  loadScoutModel,
+  saveBuildModel,
+  saveProjectPath,
+  saveScoutModel
+} from './settings'
 
 describe('loadProjectPath', () => {
   it('returns null when the settings file is missing', async () => {
@@ -91,6 +98,24 @@ describe('saveProjectPath', () => {
       'utf8'
     )
   })
+
+  it('preserves saved Build model when writing project path', async () => {
+    const readFile = vi.fn().mockResolvedValue(JSON.stringify({ buildModel: 'qwen2.5:latest' }))
+    const mkdir = vi.fn().mockResolvedValue(undefined)
+    const writeFile = vi.fn().mockResolvedValue(undefined)
+
+    await saveProjectPath('/tmp/foundry/settings.json', '/Users/garydavies/project', {
+      readFile,
+      mkdir,
+      writeFile
+    })
+
+    expect(writeFile).toHaveBeenCalledWith(
+      '/tmp/foundry/settings.json',
+      JSON.stringify({ projectPath: '/Users/garydavies/project', buildModel: 'qwen2.5:latest' }, null, 2),
+      'utf8'
+    )
+  })
 })
 
 describe('loadScoutModel', () => {
@@ -132,6 +157,24 @@ describe('saveScoutModel', () => {
     )
   })
 
+  it('writes Scout model and preserves Build model', async () => {
+    const readFile = vi.fn().mockResolvedValue(JSON.stringify({ buildModel: 'llama3:latest' }))
+    const mkdir = vi.fn().mockResolvedValue(undefined)
+    const writeFile = vi.fn().mockResolvedValue(undefined)
+
+    await saveScoutModel('/tmp/foundry/settings.json', 'qwen2.5:latest', {
+      readFile,
+      mkdir,
+      writeFile
+    })
+
+    expect(writeFile).toHaveBeenCalledWith(
+      '/tmp/foundry/settings.json',
+      JSON.stringify({ scoutModel: 'qwen2.5:latest', buildModel: 'llama3:latest' }, null, 2),
+      'utf8'
+    )
+  })
+
   it('clears Scout model when null is passed', async () => {
     const readFile = vi
       .fn()
@@ -141,6 +184,86 @@ describe('saveScoutModel', () => {
 
     await expect(
       saveScoutModel('/tmp/foundry/settings.json', null, {
+        readFile,
+        mkdir,
+        writeFile
+      })
+    ).resolves.toBeNull()
+
+    expect(writeFile).toHaveBeenCalledWith(
+      '/tmp/foundry/settings.json',
+      JSON.stringify({ projectPath: '/Users/garydavies/project' }, null, 2),
+      'utf8'
+    )
+  })
+})
+
+describe('loadBuildModel', () => {
+  it('returns null when no Build model is saved', async () => {
+    const readFile = vi.fn().mockResolvedValue(JSON.stringify({}))
+
+    await expect(loadBuildModel('/tmp/foundry-settings.json', { readFile })).resolves.toBeNull()
+  })
+
+  it('returns null when saved Build model is blank', async () => {
+    const readFile = vi.fn().mockResolvedValue(JSON.stringify({ buildModel: '   ' }))
+
+    await expect(loadBuildModel('/tmp/foundry-settings.json', { readFile })).resolves.toBeNull()
+  })
+
+  it('returns saved Build model when present', async () => {
+    const readFile = vi.fn().mockResolvedValue(JSON.stringify({ buildModel: 'llama3:latest' }))
+
+    await expect(loadBuildModel('/tmp/foundry-settings.json', { readFile })).resolves.toBe('llama3:latest')
+  })
+})
+
+describe('saveBuildModel', () => {
+  it('writes Build model and preserves project path', async () => {
+    const readFile = vi.fn().mockResolvedValue(JSON.stringify({ projectPath: '/Users/garydavies/project' }))
+    const mkdir = vi.fn().mockResolvedValue(undefined)
+    const writeFile = vi.fn().mockResolvedValue(undefined)
+
+    await saveBuildModel('/tmp/foundry/settings.json', 'llama3:latest', {
+      readFile,
+      mkdir,
+      writeFile
+    })
+
+    expect(writeFile).toHaveBeenCalledWith(
+      '/tmp/foundry/settings.json',
+      JSON.stringify({ projectPath: '/Users/garydavies/project', buildModel: 'llama3:latest' }, null, 2),
+      'utf8'
+    )
+  })
+
+  it('writes Build model and preserves Scout model', async () => {
+    const readFile = vi.fn().mockResolvedValue(JSON.stringify({ scoutModel: 'qwen2.5:latest' }))
+    const mkdir = vi.fn().mockResolvedValue(undefined)
+    const writeFile = vi.fn().mockResolvedValue(undefined)
+
+    await saveBuildModel('/tmp/foundry/settings.json', 'llama3:latest', {
+      readFile,
+      mkdir,
+      writeFile
+    })
+
+    expect(writeFile).toHaveBeenCalledWith(
+      '/tmp/foundry/settings.json',
+      JSON.stringify({ scoutModel: 'qwen2.5:latest', buildModel: 'llama3:latest' }, null, 2),
+      'utf8'
+    )
+  })
+
+  it('clears Build model when null is passed', async () => {
+    const readFile = vi
+      .fn()
+      .mockResolvedValue(JSON.stringify({ projectPath: '/Users/garydavies/project', buildModel: 'llama3:latest' }))
+    const mkdir = vi.fn().mockResolvedValue(undefined)
+    const writeFile = vi.fn().mockResolvedValue(undefined)
+
+    await expect(
+      saveBuildModel('/tmp/foundry/settings.json', null, {
         readFile,
         mkdir,
         writeFile

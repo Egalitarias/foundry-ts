@@ -7,7 +7,9 @@ declare global {
       listOllamaModels: (url: string) => Promise<string[]>
       getProjectPath: () => Promise<string | null>
       getScoutModel: () => Promise<string | null>
+      getBuildModel: () => Promise<string | null>
       setScoutModel: (model: string | null) => Promise<string | null>
+      setBuildModel: (model: string | null) => Promise<string | null>
       selectProjectPath: () => Promise<string | null>
     }
   }

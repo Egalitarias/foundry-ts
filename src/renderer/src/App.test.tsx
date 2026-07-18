@@ -13,7 +13,9 @@ declare global {
       listOllamaModels: (url: string) => Promise<string[]>
       getProjectPath: () => Promise<string | null>
       getScoutModel: () => Promise<string | null>
+      getBuildModel: () => Promise<string | null>
       setScoutModel: (model: string | null) => Promise<string | null>
+      setBuildModel: (model: string | null) => Promise<string | null>
       selectProjectPath: () => Promise<string | null>
     }
   }
@@ -144,7 +146,9 @@ describe('App rendering', () => {
       listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
       getProjectPath: vi.fn().mockResolvedValue('/Users/garydavies/github/egalitarias/foundry-ts'),
       getScoutModel: vi.fn().mockResolvedValue('llama3:latest'),
+      getBuildModel: vi.fn().mockResolvedValue('qwen2.5:latest'),
       setScoutModel: vi.fn().mockImplementation((model: string | null) => Promise.resolve(model)),
+      setBuildModel: vi.fn().mockImplementation((model: string | null) => Promise.resolve(model)),
       selectProjectPath: vi.fn().mockResolvedValue('/Users/garydavies/github/egalitarias/foundry-ts')
     }
   })
@@ -161,6 +165,8 @@ describe('App rendering', () => {
       getProjectPath: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
+      getBuildModel: vi.fn().mockResolvedValue(null),
+      setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
     }
 
@@ -224,6 +230,8 @@ describe('App rendering', () => {
       getProjectPath: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
+      getBuildModel: vi.fn().mockResolvedValue(null),
+      setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
     }
 
@@ -242,6 +250,8 @@ describe('App rendering', () => {
       getProjectPath: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
+      getBuildModel: vi.fn().mockResolvedValue(null),
+      setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
     }
 
@@ -284,6 +294,16 @@ describe('App rendering', () => {
     expect(await screen.findByDisplayValue('llama3:latest')).toBeInTheDocument()
   })
 
+  it('loads and displays saved Build model in settings', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await screen.findByText('AI agents coordinating the software delivery lifecycle.')
+    await user.click(screen.getByRole('button', { name: 'Open settings' }))
+
+    expect(await screen.findByDisplayValue('qwen2.5:latest')).toBeInTheDocument()
+  })
+
   it('saves Scout model selection from settings', async () => {
     const user = userEvent.setup()
     const setScoutModel = vi.fn().mockResolvedValue('qwen2.5:latest')
@@ -292,7 +312,9 @@ describe('App rendering', () => {
       listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
       getProjectPath: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue('llama3:latest'),
+      getBuildModel: vi.fn().mockResolvedValue(null),
       setScoutModel,
+      setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
     }
 
@@ -307,6 +329,31 @@ describe('App rendering', () => {
     expect(await screen.findByDisplayValue('qwen2.5:latest')).toBeInTheDocument()
   })
 
+  it('saves Build model selection from settings', async () => {
+    const user = userEvent.setup()
+    const setBuildModel = vi.fn().mockResolvedValue('llama3:latest')
+    window.foundry = {
+      getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
+      listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
+      getProjectPath: vi.fn().mockResolvedValue(null),
+      getScoutModel: vi.fn().mockResolvedValue(null),
+      getBuildModel: vi.fn().mockResolvedValue('qwen2.5:latest'),
+      setScoutModel: vi.fn().mockResolvedValue(null),
+      setBuildModel,
+      selectProjectPath: vi.fn().mockResolvedValue(null)
+    }
+
+    render(<App />)
+
+    await screen.findByText('AI agents coordinating the software delivery lifecycle.')
+    await user.click(screen.getByRole('button', { name: 'Open settings' }))
+    await user.click(screen.getByRole('button', { name: 'Load models' }))
+    await user.selectOptions(screen.getByLabelText('Build model'), 'llama3:latest')
+
+    expect(setBuildModel).toHaveBeenCalledWith('llama3:latest')
+    expect(await screen.findByDisplayValue('llama3:latest')).toBeInTheDocument()
+  })
+
   it('selects and displays a project path from settings', async () => {
     const user = userEvent.setup()
     const selectProjectPath = vi.fn().mockResolvedValue('/Users/garydavies/github/egalitarias/foundry-ts')
@@ -316,6 +363,8 @@ describe('App rendering', () => {
       getProjectPath: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
+      getBuildModel: vi.fn().mockResolvedValue(null),
+      setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath
     }
 
@@ -347,6 +396,8 @@ describe('App rendering', () => {
       getProjectPath: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
+      getBuildModel: vi.fn().mockResolvedValue(null),
+      setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockRejectedValue('denied')
     }
 
@@ -370,6 +421,8 @@ describe('App rendering', () => {
       getProjectPath: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
+      getBuildModel: vi.fn().mockResolvedValue(null),
+      setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
     }
 
@@ -397,6 +450,8 @@ describe('App rendering', () => {
       getProjectPath: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
+      getBuildModel: vi.fn().mockResolvedValue(null),
+      setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
     }
 
@@ -421,6 +476,8 @@ describe('App rendering', () => {
       getProjectPath: vi.fn().mockRejectedValue(new Error('Unable to read saved project path.')),
       getScoutModel: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
+      getBuildModel: vi.fn().mockResolvedValue(null),
+      setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
     }
 
@@ -440,6 +497,8 @@ describe('App rendering', () => {
       getProjectPath: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue('llama3:latest'),
       setScoutModel: vi.fn().mockRejectedValue(new Error('Unable to save Scout model.')),
+      getBuildModel: vi.fn().mockResolvedValue(null),
+      setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
     }
 
@@ -452,5 +511,29 @@ describe('App rendering', () => {
 
     expect(await screen.findByText('Unable to save Scout model.')).toBeInTheDocument()
     expect(screen.getByDisplayValue('llama3:latest')).toBeInTheDocument()
+  })
+
+  it('shows Build model save error when persistence fails', async () => {
+    const user = userEvent.setup()
+    window.foundry = {
+      getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
+      listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
+      getProjectPath: vi.fn().mockResolvedValue(null),
+      getScoutModel: vi.fn().mockResolvedValue(null),
+      getBuildModel: vi.fn().mockResolvedValue('qwen2.5:latest'),
+      setScoutModel: vi.fn().mockResolvedValue(null),
+      setBuildModel: vi.fn().mockRejectedValue(new Error('Unable to save Build model.')),
+      selectProjectPath: vi.fn().mockResolvedValue(null)
+    }
+
+    render(<App />)
+
+    await screen.findByText('AI agents coordinating the software delivery lifecycle.')
+    await user.click(screen.getByRole('button', { name: 'Open settings' }))
+    await user.click(screen.getByRole('button', { name: 'Load models' }))
+    await user.selectOptions(screen.getByLabelText('Build model'), 'llama3:latest')
+
+    expect(await screen.findByText('Unable to save Build model.')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('qwen2.5:latest')).toBeInTheDocument()
   })
 })

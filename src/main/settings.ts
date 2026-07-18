@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path'
 interface StoredSettings {
   projectPath?: unknown
   scoutModel?: unknown
+  buildModel?: unknown
 }
 
 interface SettingsDependencies {
@@ -28,6 +29,15 @@ function normalizeScoutModel(scoutModel: unknown) {
   }
 
   const trimmed = scoutModel.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
+function normalizeBuildModel(buildModel: unknown) {
+  if (typeof buildModel !== 'string') {
+    return null
+  }
+
+  const trimmed = buildModel.trim()
   return trimmed.length > 0 ? trimmed : null
 }
 
@@ -62,9 +72,10 @@ async function readStoredSettings(
 function toPersistedSettings(
   stored: StoredSettings | null,
   projectPath: string | null | undefined,
-  scoutModel: string | null | undefined
+  scoutModel: string | null | undefined,
+  buildModel: string | null | undefined
 ) {
-  const next: { projectPath?: string; scoutModel?: string } = {}
+  const next: { projectPath?: string; scoutModel?: string; buildModel?: string } = {}
 
   const resolvedProjectPath =
     projectPath === undefined ? normalizeProjectPath(stored?.projectPath) : projectPath
@@ -76,6 +87,12 @@ function toPersistedSettings(
     scoutModel === undefined ? normalizeScoutModel(stored?.scoutModel) : scoutModel
   if (resolvedScoutModel) {
     next.scoutModel = resolvedScoutModel
+  }
+
+  const resolvedBuildModel =
+    buildModel === undefined ? normalizeBuildModel(stored?.buildModel) : buildModel
+  if (resolvedBuildModel) {
+    next.buildModel = resolvedBuildModel
   }
 
   return next
@@ -121,6 +138,18 @@ export async function loadScoutModel(
   return normalizeScoutModel(stored.scoutModel)
 }
 
+export async function loadBuildModel(
+  settingsFilePath: string,
+  dependencies: SettingsDependencies = {}
+) {
+  const stored = await readStoredSettings(settingsFilePath, dependencies)
+  if (!stored) {
+    return null
+  }
+
+  return normalizeBuildModel(stored.buildModel)
+}
+
 export async function saveProjectPath(
   settingsFilePath: string,
   projectPathInput: string,
@@ -134,7 +163,7 @@ export async function saveProjectPath(
   const mkdir = dependencies.mkdir ?? fsMkdir
   const writeFile = dependencies.writeFile ?? fsWriteFile
   const stored = await readStoredSettings(settingsFilePath, dependencies)
-  const next = toPersistedSettings(stored, projectPath, undefined)
+  const next = toPersistedSettings(stored, projectPath, undefined, undefined)
 
   await mkdir(dirname(settingsFilePath), { recursive: true })
   await writeFile(settingsFilePath, JSON.stringify(next, null, 2), 'utf8')
@@ -155,10 +184,31 @@ export async function saveScoutModel(
   const mkdir = dependencies.mkdir ?? fsMkdir
   const writeFile = dependencies.writeFile ?? fsWriteFile
   const stored = await readStoredSettings(settingsFilePath, dependencies)
-  const next = toPersistedSettings(stored, undefined, scoutModel)
+  const next = toPersistedSettings(stored, undefined, scoutModel, undefined)
 
   await mkdir(dirname(settingsFilePath), { recursive: true })
   await writeFile(settingsFilePath, JSON.stringify(next, null, 2), 'utf8')
 
   return scoutModel
+}
+
+export async function saveBuildModel(
+  settingsFilePath: string,
+  buildModelInput: string | null,
+  dependencies: SettingsDependencies = {}
+) {
+  if (buildModelInput !== null && typeof buildModelInput !== 'string') {
+    throw new Error('Build model is invalid.')
+  }
+
+  const buildModel = normalizeBuildModel(buildModelInput)
+  const mkdir = dependencies.mkdir ?? fsMkdir
+  const writeFile = dependencies.writeFile ?? fsWriteFile
+  const stored = await readStoredSettings(settingsFilePath, dependencies)
+  const next = toPersistedSettings(stored, undefined, undefined, buildModel)
+
+  await mkdir(dirname(settingsFilePath), { recursive: true })
+  await writeFile(settingsFilePath, JSON.stringify(next, null, 2), 'utf8')
+
+  return buildModel
 }
