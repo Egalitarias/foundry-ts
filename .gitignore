@@ -4,3 +4,4 @@ out
 .vite
 coverage
 .DS_Store
+.vscode
