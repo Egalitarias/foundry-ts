@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App, { formatTime, phaseTone } from './App'
@@ -12,6 +12,8 @@ declare global {
       getDashboardSnapshot: () => Promise<DashboardSnapshot>
       listOllamaModels: (url: string) => Promise<string[]>
       getProjectPath: () => Promise<string | null>
+      getScoutModel: () => Promise<string | null>
+      setScoutModel: (model: string | null) => Promise<string | null>
       selectProjectPath: () => Promise<string | null>
     }
   }
@@ -141,6 +143,8 @@ describe('App rendering', () => {
       getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
       listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
       getProjectPath: vi.fn().mockResolvedValue('/Users/garydavies/github/egalitarias/foundry-ts'),
+      getScoutModel: vi.fn().mockResolvedValue('llama3:latest'),
+      setScoutModel: vi.fn().mockImplementation((model: string | null) => Promise.resolve(model)),
       selectProjectPath: vi.fn().mockResolvedValue('/Users/garydavies/github/egalitarias/foundry-ts')
     }
   })
@@ -155,6 +159,8 @@ describe('App rendering', () => {
       getDashboardSnapshot: () => new Promise<DashboardSnapshot>(() => {}),
       listOllamaModels: vi.fn().mockResolvedValue([]),
       getProjectPath: vi.fn().mockResolvedValue(null),
+      getScoutModel: vi.fn().mockResolvedValue(null),
+      setScoutModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
     }
 
@@ -216,6 +222,8 @@ describe('App rendering', () => {
       getDashboardSnapshot: vi.fn().mockRejectedValue(new Error('IPC unavailable')),
       listOllamaModels: vi.fn().mockResolvedValue([]),
       getProjectPath: vi.fn().mockResolvedValue(null),
+      getScoutModel: vi.fn().mockResolvedValue(null),
+      setScoutModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
     }
 
@@ -232,6 +240,8 @@ describe('App rendering', () => {
       getDashboardSnapshot: vi.fn().mockRejectedValue('bad'),
       listOllamaModels: vi.fn().mockResolvedValue([]),
       getProjectPath: vi.fn().mockResolvedValue(null),
+      getScoutModel: vi.fn().mockResolvedValue(null),
+      setScoutModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
     }
 
@@ -257,9 +267,44 @@ describe('App rendering', () => {
     await user.click(screen.getByRole('button', { name: 'Load models' }))
 
     await waitFor(() => {
-      expect(screen.getByText('llama3:latest')).toBeInTheDocument()
+      const modelsList = document.querySelector('.models-list')
+      expect(modelsList).not.toBeNull()
+      expect(within(modelsList as HTMLElement).getByText('llama3:latest')).toBeInTheDocument()
+      expect(within(modelsList as HTMLElement).getByText('qwen2.5:latest')).toBeInTheDocument()
     })
-    expect(screen.getByText('qwen2.5:latest')).toBeInTheDocument()
+  })
+
+  it('loads and displays saved Scout model in settings', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await screen.findByText('AI agents coordinating the software delivery lifecycle.')
+    await user.click(screen.getByRole('button', { name: 'Open settings' }))
+
+    expect(await screen.findByDisplayValue('llama3:latest')).toBeInTheDocument()
+  })
+
+  it('saves Scout model selection from settings', async () => {
+    const user = userEvent.setup()
+    const setScoutModel = vi.fn().mockResolvedValue('qwen2.5:latest')
+    window.foundry = {
+      getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
+      listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
+      getProjectPath: vi.fn().mockResolvedValue(null),
+      getScoutModel: vi.fn().mockResolvedValue('llama3:latest'),
+      setScoutModel,
+      selectProjectPath: vi.fn().mockResolvedValue(null)
+    }
+
+    render(<App />)
+
+    await screen.findByText('AI agents coordinating the software delivery lifecycle.')
+    await user.click(screen.getByRole('button', { name: 'Open settings' }))
+    await user.click(screen.getByRole('button', { name: 'Load models' }))
+    await user.selectOptions(screen.getByLabelText('Scout model'), 'qwen2.5:latest')
+
+    expect(setScoutModel).toHaveBeenCalledWith('qwen2.5:latest')
+    expect(await screen.findByDisplayValue('qwen2.5:latest')).toBeInTheDocument()
   })
 
   it('selects and displays a project path from settings', async () => {
@@ -269,6 +314,8 @@ describe('App rendering', () => {
       getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
       listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
       getProjectPath: vi.fn().mockResolvedValue(null),
+      getScoutModel: vi.fn().mockResolvedValue(null),
+      setScoutModel: vi.fn().mockResolvedValue(null),
       selectProjectPath
     }
 
@@ -298,6 +345,8 @@ describe('App rendering', () => {
       getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
       listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
       getProjectPath: vi.fn().mockResolvedValue(null),
+      getScoutModel: vi.fn().mockResolvedValue(null),
+      setScoutModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockRejectedValue('denied')
     }
 
@@ -319,6 +368,8 @@ describe('App rendering', () => {
         .mockResolvedValueOnce(['llama3:latest'])
         .mockRejectedValueOnce(new Error('Server unreachable')),
       getProjectPath: vi.fn().mockResolvedValue(null),
+      getScoutModel: vi.fn().mockResolvedValue(null),
+      setScoutModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
     }
 
@@ -328,7 +379,7 @@ describe('App rendering', () => {
     await user.click(screen.getByRole('button', { name: 'Open settings' }))
 
     await user.click(screen.getByRole('button', { name: 'Load models' }))
-    await screen.findByText('llama3:latest')
+    expect((await screen.findAllByText('llama3:latest')).length).toBeGreaterThan(0)
 
     await user.click(screen.getByRole('button', { name: 'Load models' }))
     await screen.findByText('Server unreachable')
@@ -344,6 +395,8 @@ describe('App rendering', () => {
         .mockResolvedValueOnce(['llama3:latest'])
         .mockRejectedValueOnce('bad response'),
       getProjectPath: vi.fn().mockResolvedValue(null),
+      getScoutModel: vi.fn().mockResolvedValue(null),
+      setScoutModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
     }
 
@@ -353,7 +406,7 @@ describe('App rendering', () => {
     await user.click(screen.getByRole('button', { name: 'Open settings' }))
 
     await user.click(screen.getByRole('button', { name: 'Load models' }))
-    await screen.findByText('llama3:latest')
+    expect((await screen.findAllByText('llama3:latest')).length).toBeGreaterThan(0)
 
     await user.click(screen.getByRole('button', { name: 'Load models' }))
     await screen.findByText('Unable to load models from Ollama.')
@@ -366,6 +419,8 @@ describe('App rendering', () => {
       getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
       listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
       getProjectPath: vi.fn().mockRejectedValue(new Error('Unable to read saved project path.')),
+      getScoutModel: vi.fn().mockResolvedValue(null),
+      setScoutModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
     }
 
@@ -375,5 +430,27 @@ describe('App rendering', () => {
     await user.click(screen.getByRole('button', { name: 'Open settings' }))
 
     expect(await screen.findByText('Unable to read saved project path.')).toBeInTheDocument()
+  })
+
+  it('shows Scout model save error when persistence fails', async () => {
+    const user = userEvent.setup()
+    window.foundry = {
+      getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
+      listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
+      getProjectPath: vi.fn().mockResolvedValue(null),
+      getScoutModel: vi.fn().mockResolvedValue('llama3:latest'),
+      setScoutModel: vi.fn().mockRejectedValue(new Error('Unable to save Scout model.')),
+      selectProjectPath: vi.fn().mockResolvedValue(null)
+    }
+
+    render(<App />)
+
+    await screen.findByText('AI agents coordinating the software delivery lifecycle.')
+    await user.click(screen.getByRole('button', { name: 'Open settings' }))
+    await user.click(screen.getByRole('button', { name: 'Load models' }))
+    await user.selectOptions(screen.getByLabelText('Scout model'), 'qwen2.5:latest')
+
+    expect(await screen.findByText('Unable to save Scout model.')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('llama3:latest')).toBeInTheDocument()
   })
 })

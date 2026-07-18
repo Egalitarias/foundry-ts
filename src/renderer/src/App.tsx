@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { DashboardSnapshot, PhaseSummary } from '../../shared/domain'
 
 export function phaseTone(status: PhaseSummary['status']) {
@@ -34,6 +34,10 @@ function App() {
   const [models, setModels] = useState<string[]>([])
   const [modelsLoading, setModelsLoading] = useState(false)
   const [modelsError, setModelsError] = useState<string | null>(null)
+  const [scoutModel, setScoutModel] = useState('')
+  const [scoutModelSaving, setScoutModelSaving] = useState(false)
+  const [scoutModelError, setScoutModelError] = useState<string | null>(null)
+  const scoutModelTouchedRef = useRef(false)
 
   useEffect(() => {
     let mounted = true
@@ -61,6 +65,21 @@ function App() {
       .catch((cause) => {
         if (mounted) {
           setProjectPathError(cause instanceof Error ? cause.message : 'Unable to read saved project path.')
+        }
+      })
+
+    window.foundry
+      .getScoutModel()
+      .then((value) => {
+        if (mounted && value) {
+          setScoutModel((currentValue) =>
+            !scoutModelTouchedRef.current && currentValue.length === 0 ? value : currentValue
+          )
+        }
+      })
+      .catch((cause) => {
+        if (mounted) {
+          setScoutModelError(cause instanceof Error ? cause.message : 'Unable to load saved Scout model.')
         }
       })
 
@@ -120,6 +139,25 @@ function App() {
       setProjectPathLoading(false)
     }
   }
+
+  const saveScoutModel = async (model: string) => {
+    const previousScoutModel = scoutModel
+    setScoutModel(model)
+    setScoutModelSaving(true)
+    setScoutModelError(null)
+
+    try {
+      const persistedModel = await window.foundry.setScoutModel(model.length > 0 ? model : null)
+      setScoutModel(persistedModel ?? '')
+    } catch (cause) {
+      setScoutModel(previousScoutModel)
+      setScoutModelError(cause instanceof Error ? cause.message : 'Unable to save Scout model.')
+    } finally {
+      setScoutModelSaving(false)
+    }
+  }
+
+  const scoutModelOptions = scoutModel.length > 0 && !models.includes(scoutModel) ? [scoutModel, ...models] : models
 
   return (
     <main className="shell">
@@ -207,6 +245,29 @@ function App() {
                 </ul>
               )}
             </div>
+
+            <label className="settings-label" htmlFor="scout-model-select">
+              Scout model
+            </label>
+            <select
+              id="scout-model-select"
+              className="settings-input"
+              value={scoutModel}
+              onChange={(event) => {
+                scoutModelTouchedRef.current = true
+                void saveScoutModel(event.target.value)
+              }}
+              disabled={modelsLoading || scoutModelSaving || scoutModelOptions.length === 0}
+            >
+              <option value="">No model selected</option>
+              {scoutModelOptions.map((model) => (
+                <option key={model} value={model}>
+                  {model}
+                </option>
+              ))}
+            </select>
+            <p className="settings-help">Pick which Ollama model Scout should use.</p>
+            {scoutModelError ? <p className="settings-error">{scoutModelError}</p> : null}
           </div>
         </section>
       ) : (

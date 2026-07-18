@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path'
 
 interface StoredSettings {
   projectPath?: unknown
+  scoutModel?: unknown
 }
 
 interface SettingsDependencies {
@@ -21,20 +22,24 @@ function normalizeProjectPath(projectPath: unknown) {
   return trimmed.length > 0 ? trimmed : null
 }
 
+function normalizeScoutModel(scoutModel: unknown) {
+  if (typeof scoutModel !== 'string') {
+    return null
+  }
+
+  const trimmed = scoutModel.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
 function isStoredSettings(value: unknown): value is StoredSettings {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-export function getSettingsFilePath(userDataPath: string) {
-  return join(userDataPath, 'foundry-settings.json')
-}
-
-export async function loadProjectPath(
+async function readStoredSettings(
   settingsFilePath: string,
-  dependencies: SettingsDependencies = {}
+  dependencies: Pick<SettingsDependencies, 'readFile'> = {}
 ) {
   const readFile = dependencies.readFile ?? fsReadFile
-  const fileAccess = dependencies.access ?? fsAccess
 
   let parsed: unknown
   try {
@@ -51,7 +56,47 @@ export async function loadProjectPath(
     return null
   }
 
-  const projectPath = normalizeProjectPath(parsed.projectPath)
+  return parsed
+}
+
+function toPersistedSettings(
+  stored: StoredSettings | null,
+  projectPath: string | null | undefined,
+  scoutModel: string | null | undefined
+) {
+  const next: { projectPath?: string; scoutModel?: string } = {}
+
+  const resolvedProjectPath =
+    projectPath === undefined ? normalizeProjectPath(stored?.projectPath) : projectPath
+  if (resolvedProjectPath) {
+    next.projectPath = resolvedProjectPath
+  }
+
+  const resolvedScoutModel =
+    scoutModel === undefined ? normalizeScoutModel(stored?.scoutModel) : scoutModel
+  if (resolvedScoutModel) {
+    next.scoutModel = resolvedScoutModel
+  }
+
+  return next
+}
+
+export function getSettingsFilePath(userDataPath: string) {
+  return join(userDataPath, 'foundry-settings.json')
+}
+
+export async function loadProjectPath(
+  settingsFilePath: string,
+  dependencies: SettingsDependencies = {}
+) {
+  const fileAccess = dependencies.access ?? fsAccess
+
+  const stored = await readStoredSettings(settingsFilePath, dependencies)
+  if (!stored) {
+    return null
+  }
+
+  const projectPath = normalizeProjectPath(stored.projectPath)
   if (!projectPath) {
     return null
   }
@@ -62,6 +107,18 @@ export async function loadProjectPath(
   } catch {
     return null
   }
+}
+
+export async function loadScoutModel(
+  settingsFilePath: string,
+  dependencies: SettingsDependencies = {}
+) {
+  const stored = await readStoredSettings(settingsFilePath, dependencies)
+  if (!stored) {
+    return null
+  }
+
+  return normalizeScoutModel(stored.scoutModel)
 }
 
 export async function saveProjectPath(
@@ -76,9 +133,32 @@ export async function saveProjectPath(
 
   const mkdir = dependencies.mkdir ?? fsMkdir
   const writeFile = dependencies.writeFile ?? fsWriteFile
+  const stored = await readStoredSettings(settingsFilePath, dependencies)
+  const next = toPersistedSettings(stored, projectPath, undefined)
 
   await mkdir(dirname(settingsFilePath), { recursive: true })
-  await writeFile(settingsFilePath, JSON.stringify({ projectPath }, null, 2), 'utf8')
+  await writeFile(settingsFilePath, JSON.stringify(next, null, 2), 'utf8')
 
   return projectPath
+}
+
+export async function saveScoutModel(
+  settingsFilePath: string,
+  scoutModelInput: string | null,
+  dependencies: SettingsDependencies = {}
+) {
+  if (scoutModelInput !== null && typeof scoutModelInput !== 'string') {
+    throw new Error('Scout model is invalid.')
+  }
+
+  const scoutModel = normalizeScoutModel(scoutModelInput)
+  const mkdir = dependencies.mkdir ?? fsMkdir
+  const writeFile = dependencies.writeFile ?? fsWriteFile
+  const stored = await readStoredSettings(settingsFilePath, dependencies)
+  const next = toPersistedSettings(stored, undefined, scoutModel)
+
+  await mkdir(dirname(settingsFilePath), { recursive: true })
+  await writeFile(settingsFilePath, JSON.stringify(next, null, 2), 'utf8')
+
+  return scoutModel
 }
