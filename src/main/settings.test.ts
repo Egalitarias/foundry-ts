@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   loadBuildModel,
+  loadIssueModel,
   loadOllamaUrl,
   loadProjectPath,
   loadScoutModel,
   saveBuildModel,
+  saveIssueModel,
   saveOllamaUrl,
   saveProjectPath,
   saveScoutModel
@@ -119,6 +121,24 @@ describe('saveProjectPath', () => {
     )
   })
 
+  it('preserves saved Issue model when writing project path', async () => {
+    const readFile = vi.fn().mockResolvedValue(JSON.stringify({ issueModel: 'llama3:latest' }))
+    const mkdir = vi.fn().mockResolvedValue(undefined)
+    const writeFile = vi.fn().mockResolvedValue(undefined)
+
+    await saveProjectPath('/tmp/foundry/settings.json', '/Users/garydavies/project', {
+      readFile,
+      mkdir,
+      writeFile
+    })
+
+    expect(writeFile).toHaveBeenCalledWith(
+      '/tmp/foundry/settings.json',
+      JSON.stringify({ projectPath: '/Users/garydavies/project', issueModel: 'llama3:latest' }, null, 2),
+      'utf8'
+    )
+  })
+
   it('preserves saved Ollama URL when writing project path', async () => {
     const readFile = vi.fn().mockResolvedValue(JSON.stringify({ ollamaUrl: 'http://localhost:11434' }))
     const mkdir = vi.fn().mockResolvedValue(undefined)
@@ -195,6 +215,24 @@ describe('saveScoutModel', () => {
     )
   })
 
+  it('writes Scout model and preserves Issue model', async () => {
+    const readFile = vi.fn().mockResolvedValue(JSON.stringify({ issueModel: 'llama3:latest' }))
+    const mkdir = vi.fn().mockResolvedValue(undefined)
+    const writeFile = vi.fn().mockResolvedValue(undefined)
+
+    await saveScoutModel('/tmp/foundry/settings.json', 'qwen2.5:latest', {
+      readFile,
+      mkdir,
+      writeFile
+    })
+
+    expect(writeFile).toHaveBeenCalledWith(
+      '/tmp/foundry/settings.json',
+      JSON.stringify({ scoutModel: 'qwen2.5:latest', issueModel: 'llama3:latest' }, null, 2),
+      'utf8'
+    )
+  })
+
   it('clears Scout model when null is passed', async () => {
     const readFile = vi
       .fn()
@@ -235,6 +273,26 @@ describe('loadBuildModel', () => {
     const readFile = vi.fn().mockResolvedValue(JSON.stringify({ buildModel: 'llama3:latest' }))
 
     await expect(loadBuildModel('/tmp/foundry-settings.json', { readFile })).resolves.toBe('llama3:latest')
+  })
+})
+
+describe('loadIssueModel', () => {
+  it('returns null when no Issue model is saved', async () => {
+    const readFile = vi.fn().mockResolvedValue(JSON.stringify({}))
+
+    await expect(loadIssueModel('/tmp/foundry-settings.json', { readFile })).resolves.toBeNull()
+  })
+
+  it('returns null when saved Issue model is blank', async () => {
+    const readFile = vi.fn().mockResolvedValue(JSON.stringify({ issueModel: '   ' }))
+
+    await expect(loadIssueModel('/tmp/foundry-settings.json', { readFile })).resolves.toBeNull()
+  })
+
+  it('returns saved Issue model when present', async () => {
+    const readFile = vi.fn().mockResolvedValue(JSON.stringify({ issueModel: 'llama3:latest' }))
+
+    await expect(loadIssueModel('/tmp/foundry-settings.json', { readFile })).resolves.toBe('llama3:latest')
   })
 })
 
@@ -295,6 +353,24 @@ describe('saveBuildModel', () => {
     )
   })
 
+  it('writes Build model and preserves Issue model', async () => {
+    const readFile = vi.fn().mockResolvedValue(JSON.stringify({ issueModel: 'qwen2.5:latest' }))
+    const mkdir = vi.fn().mockResolvedValue(undefined)
+    const writeFile = vi.fn().mockResolvedValue(undefined)
+
+    await saveBuildModel('/tmp/foundry/settings.json', 'llama3:latest', {
+      readFile,
+      mkdir,
+      writeFile
+    })
+
+    expect(writeFile).toHaveBeenCalledWith(
+      '/tmp/foundry/settings.json',
+      JSON.stringify({ issueModel: 'qwen2.5:latest', buildModel: 'llama3:latest' }, null, 2),
+      'utf8'
+    )
+  })
+
   it('clears Build model when null is passed', async () => {
     const readFile = vi
       .fn()
@@ -337,6 +413,24 @@ describe('saveOllamaUrl', () => {
     )
   })
 
+  it('writes Ollama URL and preserves Issue model', async () => {
+    const readFile = vi.fn().mockResolvedValue(JSON.stringify({ issueModel: 'qwen2.5:latest' }))
+    const mkdir = vi.fn().mockResolvedValue(undefined)
+    const writeFile = vi.fn().mockResolvedValue(undefined)
+
+    await saveOllamaUrl('/tmp/foundry/settings.json', 'http://localhost:11434', {
+      readFile,
+      mkdir,
+      writeFile
+    })
+
+    expect(writeFile).toHaveBeenCalledWith(
+      '/tmp/foundry/settings.json',
+      JSON.stringify({ issueModel: 'qwen2.5:latest', ollamaUrl: 'http://localhost:11434' }, null, 2),
+      'utf8'
+    )
+  })
+
   it('writes Ollama URL and preserves Scout and Build models', async () => {
     const readFile = vi
       .fn()
@@ -370,6 +464,72 @@ describe('saveOllamaUrl', () => {
 
     await expect(
       saveOllamaUrl('/tmp/foundry/settings.json', null, {
+        readFile,
+        mkdir,
+        writeFile
+      })
+    ).resolves.toBeNull()
+
+    expect(writeFile).toHaveBeenCalledWith(
+      '/tmp/foundry/settings.json',
+      JSON.stringify({ projectPath: '/Users/garydavies/project' }, null, 2),
+      'utf8'
+    )
+  })
+})
+
+describe('saveIssueModel', () => {
+  it('writes Issue model and preserves project path', async () => {
+    const readFile = vi.fn().mockResolvedValue(JSON.stringify({ projectPath: '/Users/garydavies/project' }))
+    const mkdir = vi.fn().mockResolvedValue(undefined)
+    const writeFile = vi.fn().mockResolvedValue(undefined)
+
+    await saveIssueModel('/tmp/foundry/settings.json', 'llama3:latest', {
+      readFile,
+      mkdir,
+      writeFile
+    })
+
+    expect(writeFile).toHaveBeenCalledWith(
+      '/tmp/foundry/settings.json',
+      JSON.stringify({ projectPath: '/Users/garydavies/project', issueModel: 'llama3:latest' }, null, 2),
+      'utf8'
+    )
+  })
+
+  it('writes Issue model and preserves Scout and Build models', async () => {
+    const readFile = vi
+      .fn()
+      .mockResolvedValue(JSON.stringify({ scoutModel: 'qwen2.5:latest', buildModel: 'llama3:latest' }))
+    const mkdir = vi.fn().mockResolvedValue(undefined)
+    const writeFile = vi.fn().mockResolvedValue(undefined)
+
+    await saveIssueModel('/tmp/foundry/settings.json', 'llama3:latest', {
+      readFile,
+      mkdir,
+      writeFile
+    })
+
+    expect(writeFile).toHaveBeenCalledWith(
+      '/tmp/foundry/settings.json',
+      JSON.stringify(
+        { scoutModel: 'qwen2.5:latest', issueModel: 'llama3:latest', buildModel: 'llama3:latest' },
+        null,
+        2
+      ),
+      'utf8'
+    )
+  })
+
+  it('clears Issue model when null is passed', async () => {
+    const readFile = vi
+      .fn()
+      .mockResolvedValue(JSON.stringify({ projectPath: '/Users/garydavies/project', issueModel: 'llama3:latest' }))
+    const mkdir = vi.fn().mockResolvedValue(undefined)
+    const writeFile = vi.fn().mockResolvedValue(undefined)
+
+    await expect(
+      saveIssueModel('/tmp/foundry/settings.json', null, {
         readFile,
         mkdir,
         writeFile

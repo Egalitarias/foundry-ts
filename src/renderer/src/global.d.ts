@@ -8,9 +8,11 @@ declare global {
       getProjectPath: () => Promise<string | null>
       getOllamaUrl: () => Promise<string | null>
       getScoutModel: () => Promise<string | null>
+      getIssueModel: () => Promise<string | null>
       getBuildModel: () => Promise<string | null>
       setOllamaUrl: (url: string | null) => Promise<string | null>
       setScoutModel: (model: string | null) => Promise<string | null>
+      setIssueModel: (model: string | null) => Promise<string | null>
       setBuildModel: (model: string | null) => Promise<string | null>
       selectProjectPath: () => Promise<string | null>
     }

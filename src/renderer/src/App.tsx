@@ -38,11 +38,15 @@ function App() {
   const [scoutModel, setScoutModel] = useState('')
   const [scoutModelSaving, setScoutModelSaving] = useState(false)
   const [scoutModelError, setScoutModelError] = useState<string | null>(null)
+  const [issueModel, setIssueModel] = useState('')
+  const [issueModelSaving, setIssueModelSaving] = useState(false)
+  const [issueModelError, setIssueModelError] = useState<string | null>(null)
   const [buildModel, setBuildModel] = useState('')
   const [buildModelSaving, setBuildModelSaving] = useState(false)
   const [buildModelError, setBuildModelError] = useState<string | null>(null)
   const ollamaUrlTouchedRef = useRef(false)
   const scoutModelTouchedRef = useRef(false)
+  const issueModelTouchedRef = useRef(false)
   const buildModelTouchedRef = useRef(false)
 
   useEffect(() => {
@@ -116,6 +120,21 @@ function App() {
       .catch((cause) => {
         if (mounted) {
           setBuildModelError(cause instanceof Error ? cause.message : 'Unable to load saved Build model.')
+        }
+      })
+
+    window.foundry
+      .getIssueModel()
+      .then((value) => {
+        if (mounted && value) {
+          setIssueModel((currentValue) =>
+            !issueModelTouchedRef.current && currentValue.length === 0 ? value : currentValue
+          )
+        }
+      })
+      .catch((cause) => {
+        if (mounted) {
+          setIssueModelError(cause instanceof Error ? cause.message : 'Unable to load saved Issue model.')
         }
       })
 
@@ -227,7 +246,25 @@ function App() {
     }
   }
 
+  const saveIssueModel = async (model: string) => {
+    const previousIssueModel = issueModel
+    setIssueModel(model)
+    setIssueModelSaving(true)
+    setIssueModelError(null)
+
+    try {
+      const persistedModel = await window.foundry.setIssueModel(model.length > 0 ? model : null)
+      setIssueModel(persistedModel ?? '')
+    } catch (cause) {
+      setIssueModel(previousIssueModel)
+      setIssueModelError(cause instanceof Error ? cause.message : 'Unable to save Issue model.')
+    } finally {
+      setIssueModelSaving(false)
+    }
+  }
+
   const scoutModelOptions = scoutModel.length > 0 && !models.includes(scoutModel) ? [scoutModel, ...models] : models
+  const issueModelOptions = issueModel.length > 0 && !models.includes(issueModel) ? [issueModel, ...models] : models
   const buildModelOptions = buildModel.length > 0 && !models.includes(buildModel) ? [buildModel, ...models] : models
 
   return (
@@ -346,6 +383,29 @@ function App() {
             </select>
             <p className="settings-help">Pick which Ollama model Scout should use.</p>
             {scoutModelError ? <p className="settings-error">{scoutModelError}</p> : null}
+
+            <label className="settings-label" htmlFor="issue-model-select">
+              Issue model
+            </label>
+            <select
+              id="issue-model-select"
+              className="settings-input"
+              value={issueModel}
+              onChange={(event) => {
+                issueModelTouchedRef.current = true
+                void saveIssueModel(event.target.value)
+              }}
+              disabled={modelsLoading || issueModelSaving || issueModelOptions.length === 0}
+            >
+              <option value="">No model selected</option>
+              {issueModelOptions.map((model) => (
+                <option key={model} value={model}>
+                  {model}
+                </option>
+              ))}
+            </select>
+            <p className="settings-help">Pick which Ollama model Issue should use.</p>
+            {issueModelError ? <p className="settings-error">{issueModelError}</p> : null}
 
             <label className="settings-label" htmlFor="build-model-select">
               Build model
