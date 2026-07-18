@@ -41,12 +41,16 @@ function App() {
   const [issueModel, setIssueModel] = useState('')
   const [issueModelSaving, setIssueModelSaving] = useState(false)
   const [issueModelError, setIssueModelError] = useState<string | null>(null)
+  const [estimateModel, setEstimateModel] = useState('')
+  const [estimateModelSaving, setEstimateModelSaving] = useState(false)
+  const [estimateModelError, setEstimateModelError] = useState<string | null>(null)
   const [buildModel, setBuildModel] = useState('')
   const [buildModelSaving, setBuildModelSaving] = useState(false)
   const [buildModelError, setBuildModelError] = useState<string | null>(null)
   const ollamaUrlTouchedRef = useRef(false)
   const scoutModelTouchedRef = useRef(false)
   const issueModelTouchedRef = useRef(false)
+  const estimateModelTouchedRef = useRef(false)
   const buildModelTouchedRef = useRef(false)
 
   useEffect(() => {
@@ -135,6 +139,21 @@ function App() {
       .catch((cause) => {
         if (mounted) {
           setIssueModelError(cause instanceof Error ? cause.message : 'Unable to load saved Issue model.')
+        }
+      })
+
+    window.foundry
+      .getEstimateModel()
+      .then((value) => {
+        if (mounted && value) {
+          setEstimateModel((currentValue) =>
+            !estimateModelTouchedRef.current && currentValue.length === 0 ? value : currentValue
+          )
+        }
+      })
+      .catch((cause) => {
+        if (mounted) {
+          setEstimateModelError(cause instanceof Error ? cause.message : 'Unable to load saved Estimate model.')
         }
       })
 
@@ -263,8 +282,26 @@ function App() {
     }
   }
 
+  const saveEstimateModel = async (model: string) => {
+    const previousEstimateModel = estimateModel
+    setEstimateModel(model)
+    setEstimateModelSaving(true)
+    setEstimateModelError(null)
+
+    try {
+      const persistedModel = await window.foundry.setEstimateModel(model.length > 0 ? model : null)
+      setEstimateModel(persistedModel ?? '')
+    } catch (cause) {
+      setEstimateModel(previousEstimateModel)
+      setEstimateModelError(cause instanceof Error ? cause.message : 'Unable to save Estimate model.')
+    } finally {
+      setEstimateModelSaving(false)
+    }
+  }
+
   const scoutModelOptions = scoutModel.length > 0 && !models.includes(scoutModel) ? [scoutModel, ...models] : models
   const issueModelOptions = issueModel.length > 0 && !models.includes(issueModel) ? [issueModel, ...models] : models
+  const estimateModelOptions = estimateModel.length > 0 && !models.includes(estimateModel) ? [estimateModel, ...models] : models
   const buildModelOptions = buildModel.length > 0 && !models.includes(buildModel) ? [buildModel, ...models] : models
 
   return (
@@ -406,6 +443,29 @@ function App() {
             </select>
             <p className="settings-help">Pick which Ollama model Issue should use.</p>
             {issueModelError ? <p className="settings-error">{issueModelError}</p> : null}
+
+            <label className="settings-label" htmlFor="estimate-model-select">
+              Estimate model
+            </label>
+            <select
+              id="estimate-model-select"
+              className="settings-input"
+              value={estimateModel}
+              onChange={(event) => {
+                estimateModelTouchedRef.current = true
+                void saveEstimateModel(event.target.value)
+              }}
+              disabled={modelsLoading || estimateModelSaving || estimateModelOptions.length === 0}
+            >
+              <option value="">No model selected</option>
+              {estimateModelOptions.map((model) => (
+                <option key={model} value={model}>
+                  {model}
+                </option>
+              ))}
+            </select>
+            <p className="settings-help">Pick which Ollama model Estimate should use.</p>
+            {estimateModelError ? <p className="settings-error">{estimateModelError}</p> : null}
 
             <label className="settings-label" htmlFor="build-model-select">
               Build model

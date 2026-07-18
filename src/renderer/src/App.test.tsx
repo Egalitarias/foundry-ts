@@ -15,10 +15,12 @@ declare global {
       getOllamaUrl: () => Promise<string | null>
       getScoutModel: () => Promise<string | null>
       getIssueModel: () => Promise<string | null>
+      getEstimateModel: () => Promise<string | null>
       getBuildModel: () => Promise<string | null>
       setOllamaUrl: (url: string | null) => Promise<string | null>
       setScoutModel: (model: string | null) => Promise<string | null>
       setIssueModel: (model: string | null) => Promise<string | null>
+      setEstimateModel: (model: string | null) => Promise<string | null>
       setBuildModel: (model: string | null) => Promise<string | null>
       selectProjectPath: () => Promise<string | null>
     }
@@ -152,10 +154,12 @@ describe('App rendering', () => {
       getOllamaUrl: vi.fn().mockResolvedValue('http://127.0.0.1:11434'),
       getScoutModel: vi.fn().mockResolvedValue('llama3:latest'),
       getIssueModel: vi.fn().mockResolvedValue('qwen2.5:latest'),
+      getEstimateModel: vi.fn().mockResolvedValue('qwen2.5:latest'),
       getBuildModel: vi.fn().mockResolvedValue('qwen2.5:latest'),
       setOllamaUrl: vi.fn().mockImplementation((url: string | null) => Promise.resolve(url)),
       setScoutModel: vi.fn().mockImplementation((model: string | null) => Promise.resolve(model)),
       setIssueModel: vi.fn().mockResolvedValue(null),
+      setEstimateModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockImplementation((model: string | null) => Promise.resolve(model)),
       selectProjectPath: vi.fn().mockResolvedValue('/Users/garydavies/github/egalitarias/foundry-ts')
     }
@@ -173,10 +177,12 @@ describe('App rendering', () => {
       getProjectPath: vi.fn().mockResolvedValue(null),
       getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
-      getIssueModel: vi.fn().mockResolvedValue(null),
+      getIssueModel: vi.fn().mockResolvedValue('qwen2.5:latest'),
+      getEstimateModel: vi.fn().mockResolvedValue(null),
       setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       setIssueModel: vi.fn().mockResolvedValue(null),
+      setEstimateModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
@@ -242,10 +248,12 @@ describe('App rendering', () => {
       getProjectPath: vi.fn().mockResolvedValue(null),
       getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
-      getIssueModel: vi.fn().mockResolvedValue(null),
+      getIssueModel: vi.fn().mockResolvedValue('qwen2.5:latest'),
+      getEstimateModel: vi.fn().mockResolvedValue(null),
       setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       setIssueModel: vi.fn().mockResolvedValue(null),
+      setEstimateModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
@@ -267,9 +275,11 @@ describe('App rendering', () => {
       getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
       getIssueModel: vi.fn().mockResolvedValue(null),
+      getEstimateModel: vi.fn().mockResolvedValue(null),
       setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       setIssueModel: vi.fn().mockResolvedValue(null),
+      setEstimateModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
@@ -345,10 +355,23 @@ describe('App rendering', () => {
 
     const scoutSelect = screen.getByLabelText('Scout model')
     const issueSelect = screen.getByLabelText('Issue model')
+    const estimateSelect = screen.getByLabelText('Estimate model')
     const buildSelect = screen.getByLabelText('Build model')
 
     expect(scoutSelect.compareDocumentPosition(issueSelect) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(issueSelect.compareDocumentPosition(buildSelect) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(issueSelect.compareDocumentPosition(estimateSelect) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(estimateSelect.compareDocumentPosition(buildSelect) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('loads and displays saved Estimate model in settings', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await screen.findByText('AI agents coordinating the software delivery lifecycle.')
+    await user.click(screen.getByRole('button', { name: 'Open settings' }))
+
+    const estimateSelect = screen.getByLabelText('Estimate model')
+    expect(estimateSelect).toHaveDisplayValue('qwen2.5:latest')
   })
 
   it('loads and displays saved Ollama URL in settings', async () => {
@@ -360,9 +383,11 @@ describe('App rendering', () => {
       getOllamaUrl: vi.fn().mockResolvedValue('http://localhost:11434'),
       getScoutModel: vi.fn().mockResolvedValue(null),
       getIssueModel: vi.fn().mockResolvedValue(null),
+      getEstimateModel: vi.fn().mockResolvedValue(null),
       setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       setIssueModel: vi.fn().mockResolvedValue(null),
+      setEstimateModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
@@ -386,10 +411,12 @@ describe('App rendering', () => {
       getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue('llama3:latest'),
       getIssueModel: vi.fn().mockResolvedValue(null),
+      getEstimateModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel,
       setIssueModel: vi.fn().mockResolvedValue(null),
+      setEstimateModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
     }
@@ -415,10 +442,12 @@ describe('App rendering', () => {
       getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
       getIssueModel: vi.fn().mockResolvedValue(null),
+      getEstimateModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue('qwen2.5:latest'),
       setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       setIssueModel: vi.fn().mockResolvedValue(null),
+      setEstimateModel: vi.fn().mockResolvedValue(null),
       setBuildModel,
       selectProjectPath: vi.fn().mockResolvedValue(null)
     }
@@ -443,11 +472,13 @@ describe('App rendering', () => {
       getProjectPath: vi.fn().mockResolvedValue(null),
       getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
-      getIssueModel: vi.fn().mockResolvedValue('qwen2.5:latest'),
+      getIssueModel: vi.fn().mockResolvedValue(null),
+      getEstimateModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       setIssueModel,
+      setEstimateModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
     }
@@ -463,6 +494,37 @@ describe('App rendering', () => {
     expect(screen.getByLabelText('Issue model')).toHaveDisplayValue('llama3:latest')
   })
 
+  it('saves Estimate model selection from settings', async () => {
+    const user = userEvent.setup()
+    const setEstimateModel = vi.fn().mockResolvedValue('llama3:latest')
+    window.foundry = {
+      getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
+      listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
+      getProjectPath: vi.fn().mockResolvedValue(null),
+      getOllamaUrl: vi.fn().mockResolvedValue(null),
+      getScoutModel: vi.fn().mockResolvedValue(null),
+      getIssueModel: vi.fn().mockResolvedValue(null),
+      getEstimateModel: vi.fn().mockResolvedValue('qwen2.5:latest'),
+      getBuildModel: vi.fn().mockResolvedValue(null),
+      setOllamaUrl: vi.fn().mockResolvedValue(null),
+      setScoutModel: vi.fn().mockResolvedValue(null),
+      setIssueModel: vi.fn().mockResolvedValue(null),
+      setEstimateModel,
+      setBuildModel: vi.fn().mockResolvedValue(null),
+      selectProjectPath: vi.fn().mockResolvedValue(null)
+    }
+
+    render(<App />)
+
+    await screen.findByText('AI agents coordinating the software delivery lifecycle.')
+    await user.click(screen.getByRole('button', { name: 'Open settings' }))
+    await user.click(screen.getByRole('button', { name: 'Load models' }))
+    await user.selectOptions(screen.getByLabelText('Estimate model'), 'llama3:latest')
+
+    expect(setEstimateModel).toHaveBeenCalledWith('llama3:latest')
+    expect(screen.getByLabelText('Estimate model')).toHaveDisplayValue('llama3:latest')
+  })
+
   it('selects and displays a project path from settings', async () => {
     const user = userEvent.setup()
     const selectProjectPath = vi.fn().mockResolvedValue('/Users/garydavies/github/egalitarias/foundry-ts')
@@ -473,9 +535,11 @@ describe('App rendering', () => {
       getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
       getIssueModel: vi.fn().mockResolvedValue(null),
+      getEstimateModel: vi.fn().mockResolvedValue(null),
       setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       setIssueModel: vi.fn().mockResolvedValue(null),
+      setEstimateModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath
@@ -510,9 +574,11 @@ describe('App rendering', () => {
       getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
       getIssueModel: vi.fn().mockResolvedValue(null),
+      getEstimateModel: vi.fn().mockResolvedValue(null),
       setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       setIssueModel: vi.fn().mockResolvedValue(null),
+      setEstimateModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockRejectedValue('denied')
@@ -539,9 +605,11 @@ describe('App rendering', () => {
       getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
       getIssueModel: vi.fn().mockResolvedValue(null),
+      getEstimateModel: vi.fn().mockResolvedValue(null),
       setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       setIssueModel: vi.fn().mockResolvedValue(null),
+      setEstimateModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
@@ -572,9 +640,11 @@ describe('App rendering', () => {
       getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
       getIssueModel: vi.fn().mockResolvedValue(null),
+      getEstimateModel: vi.fn().mockResolvedValue(null),
       setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       setIssueModel: vi.fn().mockResolvedValue(null),
+      setEstimateModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
@@ -602,9 +672,11 @@ describe('App rendering', () => {
       getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
       getIssueModel: vi.fn().mockResolvedValue(null),
+      getEstimateModel: vi.fn().mockResolvedValue(null),
       setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       setIssueModel: vi.fn().mockResolvedValue(null),
+      setEstimateModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
@@ -627,9 +699,11 @@ describe('App rendering', () => {
       getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue('llama3:latest'),
       getIssueModel: vi.fn().mockResolvedValue(null),
+      getEstimateModel: vi.fn().mockResolvedValue(null),
       setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockRejectedValue(new Error('Unable to save Scout model.')),
       setIssueModel: vi.fn().mockResolvedValue(null),
+      setEstimateModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
@@ -655,10 +729,12 @@ describe('App rendering', () => {
       getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
       getIssueModel: vi.fn().mockResolvedValue(null),
+      getEstimateModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue('qwen2.5:latest'),
       setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       setIssueModel: vi.fn().mockResolvedValue(null),
+      setEstimateModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockRejectedValue(new Error('Unable to save Build model.')),
       selectProjectPath: vi.fn().mockResolvedValue(null)
     }
@@ -683,10 +759,12 @@ describe('App rendering', () => {
       getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
       getIssueModel: vi.fn().mockResolvedValue('qwen2.5:latest'),
+      getEstimateModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       setIssueModel: vi.fn().mockRejectedValue(new Error('Unable to save Issue model.')),
+      setEstimateModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
     }
@@ -702,6 +780,36 @@ describe('App rendering', () => {
     expect(screen.getByLabelText('Issue model')).toHaveDisplayValue('qwen2.5:latest')
   })
 
+  it('shows Estimate model save error when persistence fails', async () => {
+    const user = userEvent.setup()
+    window.foundry = {
+      getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
+      listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
+      getProjectPath: vi.fn().mockResolvedValue(null),
+      getOllamaUrl: vi.fn().mockResolvedValue(null),
+      getScoutModel: vi.fn().mockResolvedValue(null),
+      getIssueModel: vi.fn().mockResolvedValue(null),
+      getEstimateModel: vi.fn().mockResolvedValue('qwen2.5:latest'),
+      getBuildModel: vi.fn().mockResolvedValue(null),
+      setOllamaUrl: vi.fn().mockResolvedValue(null),
+      setScoutModel: vi.fn().mockResolvedValue(null),
+      setIssueModel: vi.fn().mockResolvedValue(null),
+      setEstimateModel: vi.fn().mockRejectedValue(new Error('Unable to save Estimate model.')),
+      setBuildModel: vi.fn().mockResolvedValue(null),
+      selectProjectPath: vi.fn().mockResolvedValue(null)
+    }
+
+    render(<App />)
+
+    await screen.findByText('AI agents coordinating the software delivery lifecycle.')
+    await user.click(screen.getByRole('button', { name: 'Open settings' }))
+    await user.click(screen.getByRole('button', { name: 'Load models' }))
+    await user.selectOptions(screen.getByLabelText('Estimate model'), 'llama3:latest')
+
+    expect(await screen.findByText('Unable to save Estimate model.')).toBeInTheDocument()
+    expect(screen.getByLabelText('Estimate model')).toHaveDisplayValue('qwen2.5:latest')
+  })
+
   it('saves Ollama URL when input loses focus', async () => {
     const user = userEvent.setup()
     const setOllamaUrl = vi.fn().mockResolvedValue('http://localhost:11434')
@@ -712,10 +820,12 @@ describe('App rendering', () => {
       getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
       getIssueModel: vi.fn().mockResolvedValue(null),
+      getEstimateModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setOllamaUrl,
       setScoutModel: vi.fn().mockResolvedValue(null),
       setIssueModel: vi.fn().mockResolvedValue(null),
+      setEstimateModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
     }
@@ -743,10 +853,12 @@ describe('App rendering', () => {
       getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
       getIssueModel: vi.fn().mockResolvedValue(null),
+      getEstimateModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setOllamaUrl: vi.fn().mockRejectedValue(new Error('Unable to save Ollama URL.')),
       setScoutModel: vi.fn().mockResolvedValue(null),
       setIssueModel: vi.fn().mockResolvedValue(null),
+      setEstimateModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
     }
