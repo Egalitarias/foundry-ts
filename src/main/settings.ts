@@ -21,6 +21,10 @@ function normalizeProjectPath(projectPath: unknown) {
   return trimmed.length > 0 ? trimmed : null
 }
 
+function isStoredSettings(value: unknown): value is StoredSettings {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
 export function getSettingsFilePath(userDataPath: string) {
   return join(userDataPath, 'foundry-settings.json')
 }
@@ -32,9 +36,9 @@ export async function loadProjectPath(
   const readFile = dependencies.readFile ?? fsReadFile
   const fileAccess = dependencies.access ?? fsAccess
 
-  let stored: StoredSettings
+  let parsed: unknown
   try {
-    stored = JSON.parse(await readFile(settingsFilePath, 'utf8')) as StoredSettings
+    parsed = JSON.parse(await readFile(settingsFilePath, 'utf8')) as unknown
   } catch (cause) {
     if (cause instanceof Error && 'code' in cause && cause.code === 'ENOENT') {
       return null
@@ -43,13 +47,17 @@ export async function loadProjectPath(
     return null
   }
 
-  const projectPath = normalizeProjectPath(stored.projectPath)
+  if (!isStoredSettings(parsed)) {
+    return null
+  }
+
+  const projectPath = normalizeProjectPath(parsed.projectPath)
   if (!projectPath) {
     return null
   }
 
   try {
-    await fileAccess(projectPath)
+    await fileAccess(`${projectPath}/.`)
     return projectPath
   } catch {
     return null

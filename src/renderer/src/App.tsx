@@ -55,7 +55,7 @@ function App() {
       .getProjectPath()
       .then((value) => {
         if (mounted && value) {
-          setProjectPath(value)
+          setProjectPath((currentValue) => (currentValue.length === 0 ? value : currentValue))
         }
       })
       .catch((cause) => {

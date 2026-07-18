@@ -264,6 +264,14 @@ describe('App rendering', () => {
 
   it('selects and displays a project path from settings', async () => {
     const user = userEvent.setup()
+    const selectProjectPath = vi.fn().mockResolvedValue('/Users/garydavies/github/egalitarias/foundry-ts')
+    window.foundry = {
+      getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
+      listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
+      getProjectPath: vi.fn().mockResolvedValue(null),
+      selectProjectPath
+    }
+
     render(<App />)
 
     await screen.findByText('AI agents coordinating the software delivery lifecycle.')
@@ -271,6 +279,7 @@ describe('App rendering', () => {
     await user.click(screen.getByRole('button', { name: 'Select folder' }))
 
     expect(await screen.findByDisplayValue('/Users/garydavies/github/egalitarias/foundry-ts')).toBeInTheDocument()
+    expect(selectProjectPath).toHaveBeenCalledTimes(1)
   })
 
   it('loads and displays the saved project path when settings open', async () => {

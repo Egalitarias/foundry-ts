@@ -14,6 +14,12 @@ describe('loadProjectPath', () => {
     await expect(loadProjectPath('/tmp/foundry-settings.json', { readFile })).resolves.toBeNull()
   })
 
+  it('returns null when the settings JSON is valid but not an object', async () => {
+    const readFile = vi.fn().mockResolvedValue('null')
+
+    await expect(loadProjectPath('/tmp/foundry-settings.json', { readFile })).resolves.toBeNull()
+  })
+
   it('returns null when the saved project path is missing', async () => {
     const readFile = vi.fn().mockResolvedValue(JSON.stringify({}))
 
@@ -34,6 +40,15 @@ describe('loadProjectPath', () => {
     await expect(loadProjectPath('/tmp/foundry-settings.json', { readFile, access })).resolves.toBe(
       '/Users/garydavies/project'
     )
+    expect(access).toHaveBeenCalledWith('/Users/garydavies/project/.')
+  })
+
+  it('returns null when the saved path points to a file', async () => {
+    const readFile = vi.fn().mockResolvedValue(JSON.stringify({ projectPath: '/Users/garydavies/project.txt' }))
+    const access = vi.fn().mockRejectedValue(new Error('ENOTDIR'))
+
+    await expect(loadProjectPath('/tmp/foundry-settings.json', { readFile, access })).resolves.toBeNull()
+    expect(access).toHaveBeenCalledWith('/Users/garydavies/project.txt/.')
   })
 })
 
