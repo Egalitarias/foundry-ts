@@ -12,8 +12,10 @@ declare global {
       getDashboardSnapshot: () => Promise<DashboardSnapshot>
       listOllamaModels: (url: string) => Promise<string[]>
       getProjectPath: () => Promise<string | null>
+      getOllamaUrl: () => Promise<string | null>
       getScoutModel: () => Promise<string | null>
       getBuildModel: () => Promise<string | null>
+      setOllamaUrl: (url: string | null) => Promise<string | null>
       setScoutModel: (model: string | null) => Promise<string | null>
       setBuildModel: (model: string | null) => Promise<string | null>
       selectProjectPath: () => Promise<string | null>
@@ -145,8 +147,10 @@ describe('App rendering', () => {
       getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
       listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
       getProjectPath: vi.fn().mockResolvedValue('/Users/garydavies/github/egalitarias/foundry-ts'),
+      getOllamaUrl: vi.fn().mockResolvedValue('http://127.0.0.1:11434'),
       getScoutModel: vi.fn().mockResolvedValue('llama3:latest'),
       getBuildModel: vi.fn().mockResolvedValue('qwen2.5:latest'),
+      setOllamaUrl: vi.fn().mockImplementation((url: string | null) => Promise.resolve(url)),
       setScoutModel: vi.fn().mockImplementation((model: string | null) => Promise.resolve(model)),
       setBuildModel: vi.fn().mockImplementation((model: string | null) => Promise.resolve(model)),
       selectProjectPath: vi.fn().mockResolvedValue('/Users/garydavies/github/egalitarias/foundry-ts')
@@ -163,7 +167,9 @@ describe('App rendering', () => {
       getDashboardSnapshot: () => new Promise<DashboardSnapshot>(() => {}),
       listOllamaModels: vi.fn().mockResolvedValue([]),
       getProjectPath: vi.fn().mockResolvedValue(null),
+      getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
+      setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
@@ -228,7 +234,9 @@ describe('App rendering', () => {
       getDashboardSnapshot: vi.fn().mockRejectedValue(new Error('IPC unavailable')),
       listOllamaModels: vi.fn().mockResolvedValue([]),
       getProjectPath: vi.fn().mockResolvedValue(null),
+      getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
+      setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
@@ -248,7 +256,9 @@ describe('App rendering', () => {
       getDashboardSnapshot: vi.fn().mockRejectedValue('bad'),
       listOllamaModels: vi.fn().mockResolvedValue([]),
       getProjectPath: vi.fn().mockResolvedValue(null),
+      getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
+      setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
@@ -304,6 +314,29 @@ describe('App rendering', () => {
     expect(await screen.findByDisplayValue('qwen2.5:latest')).toBeInTheDocument()
   })
 
+  it('loads and displays saved Ollama URL in settings', async () => {
+    const user = userEvent.setup()
+    window.foundry = {
+      getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
+      listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
+      getProjectPath: vi.fn().mockResolvedValue(null),
+      getOllamaUrl: vi.fn().mockResolvedValue('http://localhost:11434'),
+      getScoutModel: vi.fn().mockResolvedValue(null),
+      setOllamaUrl: vi.fn().mockResolvedValue(null),
+      setScoutModel: vi.fn().mockResolvedValue(null),
+      getBuildModel: vi.fn().mockResolvedValue(null),
+      setBuildModel: vi.fn().mockResolvedValue(null),
+      selectProjectPath: vi.fn().mockResolvedValue(null)
+    }
+
+    render(<App />)
+
+    await screen.findByText('AI agents coordinating the software delivery lifecycle.')
+    await user.click(screen.getByRole('button', { name: 'Open settings' }))
+
+    expect(await screen.findByDisplayValue('http://localhost:11434')).toBeInTheDocument()
+  })
+
   it('saves Scout model selection from settings', async () => {
     const user = userEvent.setup()
     const setScoutModel = vi.fn().mockResolvedValue('qwen2.5:latest')
@@ -311,8 +344,10 @@ describe('App rendering', () => {
       getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
       listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
       getProjectPath: vi.fn().mockResolvedValue(null),
+      getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue('llama3:latest'),
       getBuildModel: vi.fn().mockResolvedValue(null),
+      setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel,
       setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
@@ -336,8 +371,10 @@ describe('App rendering', () => {
       getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
       listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
       getProjectPath: vi.fn().mockResolvedValue(null),
+      getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue('qwen2.5:latest'),
+      setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       setBuildModel,
       selectProjectPath: vi.fn().mockResolvedValue(null)
@@ -361,7 +398,9 @@ describe('App rendering', () => {
       getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
       listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
       getProjectPath: vi.fn().mockResolvedValue(null),
+      getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
+      setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
@@ -394,7 +433,9 @@ describe('App rendering', () => {
       getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
       listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
       getProjectPath: vi.fn().mockResolvedValue(null),
+      getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
+      setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
@@ -419,7 +460,9 @@ describe('App rendering', () => {
         .mockResolvedValueOnce(['llama3:latest'])
         .mockRejectedValueOnce(new Error('Server unreachable')),
       getProjectPath: vi.fn().mockResolvedValue(null),
+      getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
+      setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
@@ -448,7 +491,9 @@ describe('App rendering', () => {
         .mockResolvedValueOnce(['llama3:latest'])
         .mockRejectedValueOnce('bad response'),
       getProjectPath: vi.fn().mockResolvedValue(null),
+      getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
+      setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
@@ -474,7 +519,9 @@ describe('App rendering', () => {
       getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
       listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
       getProjectPath: vi.fn().mockRejectedValue(new Error('Unable to read saved project path.')),
+      getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
+      setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
@@ -495,7 +542,9 @@ describe('App rendering', () => {
       getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
       listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
       getProjectPath: vi.fn().mockResolvedValue(null),
+      getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue('llama3:latest'),
+      setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockRejectedValue(new Error('Unable to save Scout model.')),
       getBuildModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
@@ -519,8 +568,10 @@ describe('App rendering', () => {
       getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
       listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
       getProjectPath: vi.fn().mockResolvedValue(null),
+      getOllamaUrl: vi.fn().mockResolvedValue(null),
       getScoutModel: vi.fn().mockResolvedValue(null),
       getBuildModel: vi.fn().mockResolvedValue('qwen2.5:latest'),
+      setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockRejectedValue(new Error('Unable to save Build model.')),
       selectProjectPath: vi.fn().mockResolvedValue(null)
@@ -535,5 +586,62 @@ describe('App rendering', () => {
 
     expect(await screen.findByText('Unable to save Build model.')).toBeInTheDocument()
     expect(screen.getByDisplayValue('qwen2.5:latest')).toBeInTheDocument()
+  })
+
+  it('saves Ollama URL when input loses focus', async () => {
+    const user = userEvent.setup()
+    const setOllamaUrl = vi.fn().mockResolvedValue('http://localhost:11434')
+    window.foundry = {
+      getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
+      listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
+      getProjectPath: vi.fn().mockResolvedValue(null),
+      getOllamaUrl: vi.fn().mockResolvedValue(null),
+      getScoutModel: vi.fn().mockResolvedValue(null),
+      getBuildModel: vi.fn().mockResolvedValue(null),
+      setOllamaUrl,
+      setScoutModel: vi.fn().mockResolvedValue(null),
+      setBuildModel: vi.fn().mockResolvedValue(null),
+      selectProjectPath: vi.fn().mockResolvedValue(null)
+    }
+
+    render(<App />)
+
+    await screen.findByText('AI agents coordinating the software delivery lifecycle.')
+    await user.click(screen.getByRole('button', { name: 'Open settings' }))
+    const ollamaUrlInput = await screen.findByLabelText('Ollama server URL')
+    await user.clear(ollamaUrlInput)
+    await user.type(ollamaUrlInput, 'http://localhost:11434')
+    await user.tab()
+
+    await waitFor(() => {
+      expect(setOllamaUrl).toHaveBeenCalledWith('http://localhost:11434')
+    })
+  })
+
+  it('shows Ollama URL save error when persistence fails', async () => {
+    const user = userEvent.setup()
+    window.foundry = {
+      getDashboardSnapshot: vi.fn().mockResolvedValue(withSnapshot()),
+      listOllamaModels: vi.fn().mockResolvedValue(['llama3:latest', 'qwen2.5:latest']),
+      getProjectPath: vi.fn().mockResolvedValue(null),
+      getOllamaUrl: vi.fn().mockResolvedValue(null),
+      getScoutModel: vi.fn().mockResolvedValue(null),
+      getBuildModel: vi.fn().mockResolvedValue(null),
+      setOllamaUrl: vi.fn().mockRejectedValue(new Error('Unable to save Ollama URL.')),
+      setScoutModel: vi.fn().mockResolvedValue(null),
+      setBuildModel: vi.fn().mockResolvedValue(null),
+      selectProjectPath: vi.fn().mockResolvedValue(null)
+    }
+
+    render(<App />)
+
+    await screen.findByText('AI agents coordinating the software delivery lifecycle.')
+    await user.click(screen.getByRole('button', { name: 'Open settings' }))
+    const ollamaUrlInput = await screen.findByLabelText('Ollama server URL')
+    await user.clear(ollamaUrlInput)
+    await user.type(ollamaUrlInput, 'http://localhost:11434')
+    await user.tab()
+
+    expect(await screen.findByText('Unable to save Ollama URL.')).toBeInTheDocument()
   })
 })
