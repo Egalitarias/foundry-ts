@@ -346,7 +346,7 @@ describe('App rendering', () => {
     expect(issueSelect).toHaveDisplayValue('qwen2.5:latest')
   })
 
-  it('renders Issue model between Scout and Build selectors', async () => {
+  it('renders Scout, Issue, Estimate, and Build selectors in order', async () => {
     const user = userEvent.setup()
     render(<App />)
 
