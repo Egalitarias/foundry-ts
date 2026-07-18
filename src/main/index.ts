@@ -19,7 +19,7 @@ function createWindow() {
     }
   })
 
-  const devServerUrl = process.env['VITE_DEV_SERVER_URL']
+  const devServerUrl = process.env['ELECTRON_RENDERER_URL']
 
   if (devServerUrl) {
     window.loadURL(devServerUrl)
