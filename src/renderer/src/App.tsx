@@ -138,7 +138,7 @@ function App() {
       })
       .catch((cause) => {
         if (mounted) {
-          setIssueModelError(cause instanceof Error ? cause.message : 'Unable to load saved Issue model.')
+          setIssueModelError(cause instanceof Error ? cause.message : 'Unable to load saved Create New Issue model.')
         }
       })
 
@@ -276,7 +276,7 @@ function App() {
       setIssueModel(persistedModel ?? '')
     } catch (cause) {
       setIssueModel(previousIssueModel)
-      setIssueModelError(cause instanceof Error ? cause.message : 'Unable to save Issue model.')
+      setIssueModelError(cause instanceof Error ? cause.message : 'Unable to save Create New Issue model.')
     } finally {
       setIssueModelSaving(false)
     }
@@ -422,7 +422,7 @@ function App() {
             {scoutModelError ? <p className="settings-error">{scoutModelError}</p> : null}
 
             <label className="settings-label" htmlFor="issue-model-select">
-              Issue model
+              Create New Issue model
             </label>
             <select
               id="issue-model-select"
@@ -441,7 +441,7 @@ function App() {
                 </option>
               ))}
             </select>
-            <p className="settings-help">Pick which Ollama model Issue should use.</p>
+            <p className="settings-help">Pick which Ollama model Create New Issue should use.</p>
             {issueModelError ? <p className="settings-error">{issueModelError}</p> : null}
 
             <label className="settings-label" htmlFor="estimate-model-select">

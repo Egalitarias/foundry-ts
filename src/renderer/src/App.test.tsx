@@ -342,7 +342,7 @@ describe('App rendering', () => {
     await screen.findByText('AI agents coordinating the software delivery lifecycle.')
     await user.click(screen.getByRole('button', { name: 'Open settings' }))
 
-    const issueSelect = screen.getByLabelText('Issue model')
+    const issueSelect = screen.getByLabelText('Create New Issue model')
     expect(issueSelect).toHaveDisplayValue('qwen2.5:latest')
   })
 
@@ -354,7 +354,7 @@ describe('App rendering', () => {
     await user.click(screen.getByRole('button', { name: 'Open settings' }))
 
     const scoutSelect = screen.getByLabelText('Scout model')
-    const issueSelect = screen.getByLabelText('Issue model')
+    const issueSelect = screen.getByLabelText('Create New Issue model')
     const estimateSelect = screen.getByLabelText('Estimate model')
     const buildSelect = screen.getByLabelText('Build model')
 
@@ -488,10 +488,10 @@ describe('App rendering', () => {
     await screen.findByText('AI agents coordinating the software delivery lifecycle.')
     await user.click(screen.getByRole('button', { name: 'Open settings' }))
     await user.click(screen.getByRole('button', { name: 'Load models' }))
-    await user.selectOptions(screen.getByLabelText('Issue model'), 'llama3:latest')
+    await user.selectOptions(screen.getByLabelText('Create New Issue model'), 'llama3:latest')
 
     expect(setIssueModel).toHaveBeenCalledWith('llama3:latest')
-    expect(screen.getByLabelText('Issue model')).toHaveDisplayValue('llama3:latest')
+    expect(screen.getByLabelText('Create New Issue model')).toHaveDisplayValue('llama3:latest')
   })
 
   it('saves Estimate model selection from settings', async () => {
@@ -763,7 +763,7 @@ describe('App rendering', () => {
       getBuildModel: vi.fn().mockResolvedValue(null),
       setOllamaUrl: vi.fn().mockResolvedValue(null),
       setScoutModel: vi.fn().mockResolvedValue(null),
-      setIssueModel: vi.fn().mockRejectedValue(new Error('Unable to save Issue model.')),
+      setIssueModel: vi.fn().mockRejectedValue(new Error('Unable to save Create New Issue model.')),
       setEstimateModel: vi.fn().mockResolvedValue(null),
       setBuildModel: vi.fn().mockResolvedValue(null),
       selectProjectPath: vi.fn().mockResolvedValue(null)
@@ -774,10 +774,10 @@ describe('App rendering', () => {
     await screen.findByText('AI agents coordinating the software delivery lifecycle.')
     await user.click(screen.getByRole('button', { name: 'Open settings' }))
     await user.click(screen.getByRole('button', { name: 'Load models' }))
-    await user.selectOptions(screen.getByLabelText('Issue model'), 'llama3:latest')
+    await user.selectOptions(screen.getByLabelText('Create New Issue model'), 'llama3:latest')
 
-    expect(await screen.findByText('Unable to save Issue model.')).toBeInTheDocument()
-    expect(screen.getByLabelText('Issue model')).toHaveDisplayValue('qwen2.5:latest')
+    expect(await screen.findByText('Unable to save Create New Issue model.')).toBeInTheDocument()
+    expect(screen.getByLabelText('Create New Issue model')).toHaveDisplayValue('qwen2.5:latest')
   })
 
   it('shows Estimate model save error when persistence fails', async () => {
